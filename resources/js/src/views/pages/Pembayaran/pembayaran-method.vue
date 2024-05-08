@@ -7,7 +7,7 @@
           <h2>{{ item.derpature }} -> {{ item.arrival }}</h2>
           <h5>{{ formatHour(item.tanggal) }}</h5>
           <h5>{{ formatDate(item.tanggal) }}</h5>
-          <h5>{{ item.harga | toRupiah }}</h5>
+          <h5>{{ item.harga* selectedSeat.length | toRupiah }}</h5>
         </div>
         <template class="text-center">
           <v-container class="grey lighten-5">
@@ -338,18 +338,18 @@ export default {
               });
             }, 1000);
 
-            // console.log(data);
-            // if (data.code === 200 && data.data.virtual_account_info.how_to_pay_api) {
-            //   const howToPayApi = data.data.virtual_account_info.how_to_pay_api;
-            //   console.log(howToPayApi)
-            //   this.$router.push({
-            //     name: 'pembayaran-instruction-bca',
-            //     params: { howToPayApi: howToPayApi }
-            //   });
+            console.log(data);
+            if (data.code === 200 && data.data.virtual_account_info.how_to_pay_api) {
+              const howToPayApi = data.data.virtual_account_info.how_to_pay_api;
+              console.log(howToPayApi)
+              this.$router.push({
+                name: 'pembayaran-instruction-bca',
+                params: { howToPayApi: howToPayApi }
+              });
 
-            // } else {
-            //   console.error("Invalid response or missing how_to_pay_page XML");
-            // }
+            } else {
+              console.error("Invalid response or missing how_to_pay_page XML");
+            }
           });
       } catch (error) {
         console.error(error);
