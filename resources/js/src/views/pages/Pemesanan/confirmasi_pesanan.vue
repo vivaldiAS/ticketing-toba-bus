@@ -115,7 +115,7 @@
               <v-col cols="4" md="4" sm="4">
                 <div class="pa-2" tile>
                   <h3>Harga</h3>
-                  <h5>{{ selectedSeatPrice | toRupiah }}</h5>
+                  <h5>{{ item.harga * selectedSeat.length | toRupiah }}</h5>
                 </div>
               </v-col>
               <v-col cols="6" md="6" sm="6">
@@ -157,6 +157,7 @@ import {
   mdiSofaSingle,
   mdiChevronRight,
 } from "@mdi/js";
+
 export default {
   setup() {
     return {
@@ -171,16 +172,13 @@ export default {
     };
   },
   computed: {
-    ...mapState(['selectedSeatPrice']
-   ), // Mengambil harga dari state Vuex
-
+    ...mapState(["selectedSeat"]),
     id_schedule() {
       return this.$store.state.busData.id_schedule;
     },
     harga() {
       return this.$store.state.busData.harga;
     },
-
     userRole() {
       return this.$store.state.userRole;
     },
@@ -235,32 +233,29 @@ export default {
     };
   },
   mounted() {
-  this.getSchedule();
-  console.log(this.autoFill);
-  console.log('selectedSeatPrice:', this.selectedSeatPrice); // Tambahkan baris ini
-  // Mengisi data nama dan nomor hp jika autoFill bernilai true
-  if (!this.autoFill) {
-    const access_token = localStorage.getItem("access_token");
-
-    axios
-      .get("api/user/profile", {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      })
-      .then((response) => {
-        this.user = response.data;
-        this.passenger.name = this.user.name;
-        this.passenger.number_phone = this.user.phone_number;
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  } else {
-    //user will filled manual the input text
-  }
-},
-
+    this.getSchedule();
+    console.log(this.autoFill);
+    console.log('nilai selectedSeat pada halaman confirmasi-pesanan.vue:', this.selectedSeat);
+    if (!this.autoFill) {
+      const access_token = localStorage.getItem("access_token");
+      axios
+        .get("api/user/profile", {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        })
+        .then((response) => {
+          this.user = response.data;
+          this.passenger.name = this.user.name;
+          this.passenger.number_phone = this.user.phone_number;
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    } else {
+      // user will filled manual the input text
+    }
+  },
   watch: {
     autoFill: function (val) {
       if (val) {
@@ -273,6 +268,7 @@ export default {
     },
   },
   methods: {
+    ...mapActions(["setSelectedSeat"]),
     formatDate(date) {
       moment.locale("id");
       return moment(date).format("dddd, Do MMMM YYYY");
@@ -302,32 +298,30 @@ export default {
     submitData() {
       if (this.jemput) {
         if (!this.passenger.name || !this.passenger.number_phone) {
-          // Tampilkan pesan error menggunakan Vuetify Snackbar
           this.snackbar = true;
           return;
         }
-        // set data penumpang ke state Vuex
         this.$store.dispatch("setPassengerData", {
           name: this.passenger.name,
           number_phone: this.passenger.number_phone,
           alamatJemput: this.passenger.alamatJemput,
+          selectedSeat: this.selectedSeat, // Mengirim selectedSeat ke data penumpang
         });
       } else {
         if (!this.passenger.name || !this.passenger.number_phone) {
-          // Tampilkan pesan error menggunakan Vuetify Snackbar
           this.snackbar = true;
           return;
         }
-        // set data penumpang ke state Vuex
         this.$store.dispatch("setPassengerData", {
           name: this.passenger.name,
           number_phone: this.passenger.number_phone,
           alamatJemput: this.schedule[0].derpature,
+          selectedSeat: this.selectedSeat, // Mengirim selectedSeat ke data penumpang
         });
       }
-      // redirect ke halaman berhasil
       this.$router.push("/pembayaran");
     },
   },
 };
 </script>
+
