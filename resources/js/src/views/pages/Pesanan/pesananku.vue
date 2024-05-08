@@ -5,7 +5,7 @@
         Pesanan anda
       </v-card-title>
     </v-card>
-    <!-- <v-card flat> -->
+
     <v-card v-for="item in pesanan" :key="item.bookings_id" class="card">
       <v-row no-gutters>
         <v-col cols="auto">
@@ -19,13 +19,9 @@
           </v-avatar>
         </v-col>
         <v-col>
-          <div class="d-flex justify-content-between ">
-            <v-card-title class="text-h6"
-              >{{ item.derpature }} - {{ item.arrival }}</v-card-title
-            >
-            <div class="text-h6  harga" style="color: #ff4c51">
-              {{ item.harga | toRupiah }}
-            </div>
+          <div class="d-flex justify-content-between">
+            <v-card-title class="text-h6">{{ item.derpature }} - {{ item.arrival }}</v-card-title>
+            <div class="text-h6 harga" style="color: #ff4c51">{{ item.harga | toRupiah }}</div>
             <v-btn
               v-if="item.status === 'in_progress' && item.status_pay == 'Berhasil'"
               rounded
@@ -119,7 +115,10 @@
         </v-col>
       </v-row>
     </v-card>
-    <!-- </v-card> -->
+
+    <v-card v-if="pesanan.length === 0"  style="margin-top: 10px;">
+      <h3 class="text-center py-4">Maaf, anda belum memiliki riwayat pesanan.</h3>
+    </v-card>
   </div>
 </template>
 <script>
