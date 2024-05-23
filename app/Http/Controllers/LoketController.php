@@ -6,6 +6,7 @@ use App\Http\Controllers\API\BaseController;
 use App\Models\loket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class LoketController extends BaseController
@@ -13,13 +14,10 @@ class LoketController extends BaseController
 
     public function store(Request $request)
     {
-
         $validator = Validator::make($request->all(), [
-
             'nama_loket' => 'required|string',
             'lokasi_loket' => 'required|string',
             'admin_id' => 'required|integer|unique:lokets',
-            
         ], [
             'required' => ':attribute tidak boleh kosong.',
             'string' => ':attribute hanya bisa diisi oleh huruf dan angka.',
@@ -27,17 +25,26 @@ class LoketController extends BaseController
             'admin_id.required'=> 'Admin harus diisi.',
             'lokasi_loket.required'=> 'Lokasi loket harus diisi.',
             'nama_loket.required'=> 'Nama loket harus diisi.',
-
         ]);
         if ($validator->fails()) {
             return $this->sendError('Input tidak boleh kosong', $validator->errors(), 422);
         }
-
+    
+        // Dapatkan ID user yang sedang login
+        $userId = Auth::id();
+    
+        // Query untuk mendapatkan brand_id dari tabel brands berdasarkan admin_id
+        $brandId = DB::table('users')
+            ->join('brands', 'brands.admin_id', '=', 'users.id')
+            ->where('users.id', $userId)
+            ->value('brands.id');
+    
         $input = $request->all();
-        loket::create($input);
-
+        $input['brand_id'] = $brandId; // Tambahkan nilai brand_id ke input
+    
+        DB::table('lokets')->insert($input); // Menambahkan data ke tabel lokets
+    
         return $this->sendResponse($input, 'Berhasil Menambahkan Loket.');
-
     }
 
     public function UpdateStatus($id)
@@ -60,9 +67,13 @@ class LoketController extends BaseController
 
     public function show()
     {
-        $loket = DB::table('lokets')
-            ->join('users', 'users.id', '=', 'lokets.admin_id')
-            ->select('lokets.*', 'users.name', 'users.email')
+        $adminId = auth()->user()->id;
+
+        $loket = DB::table('lokets as l')
+            ->join('users', 'users.id', '=', 'l.admin_id')
+            ->join('brands', 'brands.id', '=', 'l.brand_id')
+            ->select('l.id', 'l.nama_loket', 'l.lokasi_loket', 'l.status', 'l.nama_loket', 'brands.admin_id', 'users.name', 'users.email')
+            ->where('brands.admin_id', $adminId)
             ->get();
         return response()->json($loket);
     }
@@ -86,14 +97,17 @@ class LoketController extends BaseController
 
     public function notAssociated()
     {
-        $supir = DB::table('users')
-            ->leftJoin('lokets', 'users.id', '=', 'lokets.admin_id')
-            ->where('users.role_id', 4)
-            ->whereNull('lokets.admin_id')
-            ->select('users.*')
-            ->get();
+        $userId = Auth::id(); // Dapatkan ID user yang sedang login
 
-
+        $supir = DB::table('users as u')
+        ->leftJoin('adminloket_brand as ab', 'u.id', '=', 'ab.id_adminloket')
+        ->join('brands as b', 'b.id', '=', 'ab.brand_id')
+        ->leftJoin('lokets as l', 'l.admin_id', '=', 'u.id')
+        ->where('u.role_id', 4)
+        ->where('b.admin_id', $userId) // Filter berdasarkan ID user yang sedang login
+        ->whereNull('l.admin_id') // Pastikan tidak ada admin_id yang terkait di lokets
+        ->select('u.*')
+        ->get();
         return response()->json($supir);
     }
 }

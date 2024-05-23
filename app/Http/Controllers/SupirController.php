@@ -9,8 +9,13 @@ use Illuminate\Support\Facades\DB;
 class SupirController extends Controller
 {
     public function index(){
-        $user = User::where('role_id', 3)->get();
-
+        $adminId = auth()->user()->id;
+        $user = DB::table('users as u')
+                ->join('sopir_brand as sb', 'u.id', '=', 'sb.id_sopir')
+                ->join('brands as br', 'br.id', '=', 'sb.brand_id')
+                ->where('br.admin_id', $adminId)
+                ->select('u.*')
+                ->get();
         return response()->json($user);
     }
     public function getOne(){

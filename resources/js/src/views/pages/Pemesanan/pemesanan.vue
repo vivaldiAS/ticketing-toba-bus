@@ -26,7 +26,7 @@
         ></v-col>
         <v-col
           ><v-select
-            v-model="selectedType"
+            v-model="selectedType"A
             :items="['Economi', 'Executive']"
             placeholder="Pilih Type"
             clearable

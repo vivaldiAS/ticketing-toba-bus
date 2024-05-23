@@ -27,7 +27,7 @@ export default {
     return {
       buss: [
         'police_number',
-        'name',
+        'driver_name',
         'number_of_seats',
         'type',
         'status',
@@ -52,7 +52,7 @@ export default {
 
         },
         { text: 'Nomor Pintu', value: 'nomor_pintu' },
-        { text: 'Sopir', value: 'name' },
+        { text: 'Sopir', value: 'driver_name' },
         { text: 'Jumlah Seat', value: 'number_of_seats' },
         { text: 'Type', value: 'type' },
         { text: 'Loket', value: 'nama_loket' },

@@ -20,6 +20,7 @@ use App\Http\Controllers\SupirController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\UpdateStatusUserController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\DokuPaymentController;
 use App\Models\Bookings;
 use App\Models\bus;
 use App\Models\Role;
@@ -47,13 +48,18 @@ use Illuminate\Support\Facades\Route;
 // Route::post('/pembayaran', [PembayaranController::class, 'generateToken']);
 Route::post('login', [LoginController::class, 'login']);
 
-Route::post('/buses/store', [PASTIController::class, 'storeBus']);
 Route::put('/buses/{id}', [PASTIController::class, 'update']);
 Route::delete('/buses/{id}', [PASTIController::class, 'destroy']);
 Route::get('/routes/all', [PASTIController::class, 'lihatRoutes']);
 Route::post('/routes/tambah', [PASTIController::class, 'storeRoutes']);
 Route::put('/routes/update/{id}', [RoutesController::class, 'update']);
 Route::delete('/routes/destroy/{id}', [RoutesController::class, 'destroy']);
+
+Route::domain('/doku-payment')->group(function () {
+    Route::get('/', [DokuPaymentController::class, 'checkoutPayment']);        
+});
+
+
 
 // Route::put('/routes/update/{id}', [PASTIController::class, 'updateRoutes']);
 
@@ -112,6 +118,10 @@ Route::middleware(['auth:api', 'role:passenger'])->group(function () {
 
 
 Route::middleware(['auth:api', 'role:admin_kantor'])->group(function () {
+    Route::get('/Dashboard/direksi', [DashboardDireksiController::class, 'CountAll']);
+    Route::post('/buses/store', [PASTIController::class, 'storeBus']);
+    Route::get('/Keuangan/all/index', [DireksiController::class, 'index']);
+
     Route::put('/account/update/status/{id}', [UpdateStatusUserController::class, 'update']);
     Route::put('/bus/update/status/{id}', [BusController::class, 'updateStatus']);
 
@@ -134,7 +144,8 @@ Route::middleware(['auth:api', 'role:admin_kantor'])->group(function () {
 
     Route::post('/buss/add', [BusController::class, 'store']);
     Route::get('/buss/show/all', [BusController::class, 'show']);
-    Route::get('/buss/show/notAssociated', [BusController::class, 'notAssociated']);
+    Route::get('/buss/show/notAssociated', [BusController::class, 'notAsssociated']);
+    Route::get('/buss/show/noJadwal', [BusController::class, 'busnoJadwal']);
     Route::put('/buss/update/{id}', [BusController::class, 'update']);
     Route::delete('/buss/delete/{id}', [BusController::class, 'delete']);
 
@@ -154,8 +165,6 @@ Route::middleware(['auth:api', 'role:driver'])->group(function () {
 
 
 
-    Route::get('/Dashboard/direksi', [DashboardDireksiController::class, 'CountAll']);
-    Route::get('/Keuangan/all/index', [DireksiController::class, 'index']);
     Route::get('/Detail-keuangan-Bydate/all/{tanggal}', [DireksiController::class, 'getByTanggal']);
     Route::get('/Detail-keuangan-ByPassenger/all/{id}', [DireksiController::class, 'getPassenger']);
 

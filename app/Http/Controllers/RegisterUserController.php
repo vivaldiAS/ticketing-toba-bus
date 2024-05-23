@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\API\BaseController;
 use App\Models\User;
 use App\Models\Brand;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class RegisterUserController extends BaseController
@@ -71,21 +73,35 @@ class RegisterUserController extends BaseController
             'unique' => ':attribute sudah digunakan',
             'string' => ':attribute hanya bisa diisi oleh huruf dan angka.',
         ]);
-
+    
         if ($validator->fails()) {
             return $this->sendError('Input tidak boleh kosong', $validator->errors(), 422);
         }
-
+    
         $input = $request->all();
-        $input['password'] = bcrypt('supir123');
+        $input['password'] = bcrypt('123456');
         $input['photo'] = "null";
         $input['role_id'] = '3';
         $input['status'] = 1;
+    
+        // Membuat entri baru di tabel users
         $user = User::create($input);
-
+    
+        // Dapatkan ID admin yang sedang login
+        $adminId = Auth::id();
+    
+        // Query untuk mendapatkan brand_id dari tabel brands berdasarkan admin_id
+        $brandId = DB::table('brands')->where('admin_id', $adminId)->value('id');
+    
+        // Membuat entri baru di tabel sopir_brand
+        DB::table('sopir_brand')->insert([
+            'id_sopir' => $user->id,
+            'brand_id' => $brandId,
+        ]);
+    
         $success['token'] =  $user->createToken('MyApp')->accessToken;
         $success['name'] =  $user->name;
-
+    
         return $this->sendResponse($input, 'Berhasil menambahkan supir');
     }
 
@@ -117,7 +133,7 @@ class RegisterUserController extends BaseController
         }
 
         $input = $request->all();
-        $input['password'] = bcrypt('kantor123');
+        $input['password'] = bcrypt('123456');
         $input['photo'] = "null";
         $input['role_id'] = '1';
         $input['status'] = 1;

@@ -104,6 +104,9 @@ export default {
     AddLoket() {
       const access_token = localStorage.getItem("access_token");
 
+      console.log("Nama Loket:", this.loket.nama_loket);
+console.log("Lokasi Loket:", this.loket.lokasi_loket);
+console.log("Admin ID:", this.loket.admin);
       axios
         .post(
           "/api/loket/add",

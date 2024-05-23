@@ -10,17 +10,20 @@ use App\Http\Controllers\API\BaseController;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Auth;
+
 
 class BusController extends BaseController
 {
     public function store(Request $request)
     {
+        $user_id = Auth::user()->id;
+        $merk_id = DB::table('brands')->where('admin_id', $user_id)->value('id');
 
         $validator = Validator::make($request->all(), [
             'type' => 'required|string|max:20',
             'police_number' => 'required|string|unique:buses',
             'number_of_seats' => 'required|string',
-            'merk_id' => 'required|string',
             'nomor_pintu' => 'required|string|unique:buses',
             'supir_id' => 'required:unique:users',
             'loket_id' => 'required'
@@ -46,26 +49,38 @@ class BusController extends BaseController
 
         $input = $request->all();
         $input['status'] = 1;
+        $input['merk_id'] = $merk_id;
         bus::create($input);
 
         return $this->sendResponse($input, 'Berhasil menambhakan mobil.');
 
     }
+    
     public function show()
     {
+        // Mendapatkan pengguna yang sedang login
+        $user = Auth::user();
+    
+        // Mencari brands_id pengguna yang sedang login
+        $brand_id = DB::table('users')
+            ->join('brands', 'users.id', '=', 'brands.admin_id')
+            ->where('users.id', '=',  $user->id)
+            ->where('users.role_id', '=',  1)
+            ->select('brands.id')
+            ->first();
+    
+        if (!$brand_id) {
+            return response()->json(['message' => 'Brand not found for this user'], 404);
+        }
+    
         $buses = DB::table('buses')
             ->join('lokets', 'buses.loket_id', '=', 'lokets.id')
             ->join('users', 'users.id', '=', 'buses.supir_id')
             ->select('buses.*', 'lokets.nama_loket', 'users.name as driver_name', 'users.email as driver_email')
+            ->where('buses.merk_id', '=', $brand_id->id) // Filter buses berdasarkan merk_id yang dimiliki oleh pengguna
             ->get();
-
-        $responseData = [
-            'status' => 'success',
-            'message' => 'Buses Retrieved Successfully',
-            'data' => BusResource::collection($buses)
-        ];
-        return Response::json($responseData);
-
+    
+        return response()->json(['data' => $buses]);
     }
 
     public function show2()
@@ -85,7 +100,6 @@ class BusController extends BaseController
             'type' => 'required|string',
             'police_number' => 'required|string|unique:buses,police_number,' . $id,
             'number_of_seats' => 'required|string',
-            'merk_id' => 'required|string',
             // 'supir_id' => 'required|unique:buses'
         ]);
 
@@ -97,7 +111,6 @@ class BusController extends BaseController
         $bus->police_number = $request->input('police_number');
         $bus->loket_id = $request->input('loket_id');
         $bus->number_of_seats = $request->input('number_of_seats');
-        $bus->merk_id = $request->input('merk');
         $bus->supir_id = $request->input('supir_id');
         $bus->save();
 
@@ -160,14 +173,43 @@ class BusController extends BaseController
     
     public function notAssociated()
     {
+        $user_id = Auth::user()->id;
+
         $supir = DB::table('users')
-            ->leftJoin('buses', 'users.id', '=', 'buses.supir_id')
-            ->where('users.role_id', 3)
-            ->whereNull('buses.supir_id')
-            ->select('users.*')
-            ->get();
+        ->leftJoin('buses', 'users.id', '=', 'buses.supir_id')
+        ->leftJoin('sopir_brand as sb', 'sb.id_sopir', '=', 'users.id')
+        ->join('brands', 'brands.id', '=', 'sb.brand_id')
+        ->where('users.role_id', 3)
+        ->whereNull('buses.supir_id')
+        ->where('brands.admin_id', '=', $user_id)
+        ->select('users.*')
+        ->get();
+    
 
 
         return response()->json($supir);
+    }
+
+    public function busNoJadwal()
+    {
+        $user_id = Auth::user()->id;
+
+        $results = DB::table('buses')
+    ->leftJoin('schedules as sc', 'sc.bus_id', '=', 'buses.id')
+    ->leftJoin('brands as b', 'b.id', '=', 'buses.merk_id')
+    ->where('b.admin_id', $user_id)
+    ->whereNotIn('buses.id', function ($query) {
+        $query->select('bus_id')
+              ->from('schedules')
+              ->where('status', 'not_started');
+    })
+    ->select('buses.*')
+    ->distinct()
+    ->get();
+
+$data = ["data" => $results->toArray()];
+
+return response()->json($data);
+
     }
 }

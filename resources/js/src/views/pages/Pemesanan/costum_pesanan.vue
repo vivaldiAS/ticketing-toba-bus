@@ -73,7 +73,7 @@
           </v-container>
         </div>
 
-        <div class="check" v-if="selectedChairs.length > 0">
+        <div class="check" v-if="selectedSeat.length > 0">
           <v-container class="grey text-center">
             <v-card class="mb-3">
               <v-row>
@@ -81,7 +81,7 @@
                 <v-col cols="4" md="4" sm="4">
                   <div class="pa-2" tile>
                     <h3>Seat Dipilih</h3>
-                    <h5>{{ selectedChairs.join(', ') }}</h5>
+                    <h5>{{ selectedSeat.join(', ') }}</h5>
                   </div>
                 </v-col>
 
@@ -93,7 +93,7 @@
                       fab
                       dark
                       color="secondary"
-                      @click="proceedToConfirmation"
+                      @click="submitData"
                     >
                       <v-icon dark>{{ icons.mdiChevronRight }}</v-icon>
                     </v-btn>
@@ -127,6 +127,7 @@ import axios from "axios";
 import moment from "moment";
 import "moment/locale/id";
 import { mapState, mapActions } from "vuex";
+
 import {
   mdiCalendarClock,
   mdiAccountGroup,
@@ -155,7 +156,7 @@ export default {
   data() {
     return {
       schedule: {},
-      selectedChairs: [],
+      selectedSeat: [],
       bookingsChair: [],
       snackbar: {
         show: false,
@@ -166,7 +167,8 @@ export default {
     };
   },
   computed: {
-    ...mapState(["busData", "selectedSeat"]),
+    ...mapState(["busData"]),
+    ...mapState(["selectedSeat"]),
     id_schedule() {
       return this.$store.state.busData.id_schedule;
     },
@@ -174,7 +176,7 @@ export default {
       return this.$store.state.busData.harga;
     },
     totalHarga() {
-      return this.harga * this.selectedChairs.length;
+      return this.harga * this.selectedSeat.length;
     }
   },
 
@@ -196,6 +198,8 @@ export default {
   },
 
   methods: {
+    ...mapActions(["toggleChairSelection"]),
+
     getColSize(n) {
       if (n <= 3) {
         return 4;
@@ -210,30 +214,30 @@ export default {
       }
     },
     submitData() {
-        // Pastikan this.totalHarga memiliki nilai yang valid sebelum menetapkannya
-        if (!isNaN(this.totalHarga) && this.totalHarga !== null) {
-            // Set data harga kursi yang dipilih ke state Vuex saat pengguna melakukan submit
-            this.$store.commit('SET_SELECTED_SEAT_PRICE', this.totalHarga);
-        } else {
-            console.error('Total harga kursi tidak valid');
-        }
+  if (!isNaN(this.totalHarga) && this.totalHarga !== null) {
+    console.log('nilai selectedSeat pada halaman custom-pesanan.vue:', this.selectedSeat); 
+    // this.$store.commit('SET_SELECTED_SEATS', this.selectedSeat.slice());
+    this.$store.dispatch('setSelectedSeat', this.selectedSeat.slice()); // Panggil action Vuex di sini
+    this.proceedToConfirmation();
+  } else {
+    console.error('Total harga kursi tidak valid');
+  }
+},
 
-        // Lanjutkan dengan langkah-langkah lainnya, seperti navigasi atau validasi lainnya
-    },
     getDisplayedSeatNumber(n) {
       return n;
     },
 
     toggleChairSelection(seat) {
-      if (this.selectedChairs.includes(seat)) {
-        this.selectedChairs = this.selectedChairs.filter(chair => chair !== seat);
+      if (this.selectedSeat.includes(seat)) {
+        this.selectedSeat = this.selectedSeat.filter(chair => chair !== seat);
       } else {
-        this.selectedChairs.push(seat);
+        this.selectedSeat.push(seat);
       }
     },
 
     isSelectedChair(seat) {
-      return this.selectedChairs.includes(seat);
+      return this.selectedSeat.includes(seat);
     },
 
     isBookedChair(seat) {
@@ -241,14 +245,13 @@ export default {
     },
 
     proceedToConfirmation() {
-      if (this.selectedChairs.length > 0) {
-        this.$store.dispatch("setSelectedSeat", this.selectedChairs);
-        this.$router.push("/confirmasi-pemesanan");
-      } else {
-        this.snackbar.message = "Pilih setidaknya satu kursi";
-        this.snackbar.show = true;
-      }
-    },
+    if (this.selectedSeat.length > 0) {
+      this.$router.push("/confirmasi-pemesanan");
+    } else {
+      this.snackbar.message = "Pilih setidaknya satu kursi";
+      this.snackbar.show = true;
+    }
+  },
 
     getbookingsChair() {
       const access_token = localStorage.getItem("access_token");
@@ -289,14 +292,14 @@ export default {
       this.snackbar.show = false;
     },
   },
+
   watch: {
-    selectedChairs(newValue) {
+    selectedSeat(newValue) {
       localStorage.setItem("selectedChairs", JSON.stringify(newValue));
     },
   },
 };
 </script>
-
 
 <style scoped>
 .chair {

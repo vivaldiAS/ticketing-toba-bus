@@ -260,6 +260,16 @@ const routes = [{
     },
   },
   {
+    path: '/loket-payment/:id_schedule',
+    name: 'loket-payment',
+    component: () => import('@/views/pages/Pembayaran/lakukan-pembayaran-tunai.vue'),
+    props: true,
+    meta: {
+      requiresAuth: true,
+      requiresRole: ['admin_loket', 'passenger'],
+    },
+  },  
+  {
     path: '/all-bus',
     name: 'all-bus',
     component: () => import('@/views/pages/Pemesanan/pemesanan-by-penumpang.vue'),
@@ -483,5 +493,7 @@ router.beforeEach((to, from, next) => {
 
   next(); // Continue navigation
 });
+
+
 
 export default router

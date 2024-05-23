@@ -139,7 +139,7 @@ export default {
       });
     // bus
     axios
-      .get("api/busss/show/all", {
+      .get("/api/buss/show/noJadwal", {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },

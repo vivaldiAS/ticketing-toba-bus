@@ -7,7 +7,7 @@
           <h2>{{ item.derpature }} -> {{ item.arrival }}</h2>
           <h5>{{ formatHour(item.tanggal) }}</h5>
           <h5>{{ formatDate(item.tanggal) }}</h5>
-          <h5>{{ item.harga | toRupiah }}</h5>
+          <h5>{{ item.harga * selectedSeat.length | toRupiah }}</h5>
         </div>
         <template class="text-center">
           <v-container class="grey lighten-5">
@@ -86,22 +86,7 @@
               </v-row>
             </div>
           </div>
-          <!-- <v-banner elevation="4"> -->
-          <!-- <v-row align="center" color="black" justify="center" @click="showPaymentMethods = !showPaymentMethods">
-              <v-col cols="auto">
-                <v-icon size="22">{{ icons.mdiCreditCard }}</v-icon>
-              </v-col>
-              <v-col>
-                <span class="text-subtitle-1 ml-2">Pilih metode Pembayaran</span>
-              </v-col>
-              <v-col cols="auto">
-                <v-icon size="22">{{ icons.mdiChevronRight }}</v-icon>
-              </v-col>
-            </v-row> -->
-          <!-- <v-row v-if="showPaymentMethods"> -->
           <v-col>
-            <!-- <v-radio-group v-model="selectedMethod"> -->
-            <!-- nontunai -->
             <div v-if="userRole == 'passenger'">
               <div v-if="loading" class="loading-overlay">
                 <div class="loading-spinner"></div>
@@ -109,11 +94,9 @@
               <v-banner>
                 <v-row>
                   <v-col cols="auto">
-                    <v-icon size="22" color="primary">{{
-                      icons.mdiWalletOutline
-                    }}</v-icon>
+                    <v-icon size="22" color="primary">{{ icons.mdiWalletOutline }}</v-icon>
                   </v-col>
-                  <v-col @click="togglePaymentNoncash"> NonTunai </v-col>
+                  <v-col @click="togglePaymentNoncash">NonTunai</v-col>
                   <v-col cols="auto">
                     <v-icon size="22">{{ icons.mdiChevronRight }}</v-icon>
                   </v-col>
@@ -124,19 +107,36 @@
                   <v-row>
                     <v-col cols="auto">
                       <v-col>
-                        <v-btn color="primary" @click.prevent="BayarNontunai"
-                          >Bayar Sekarang</v-btn
-                        >
+                        <v-btn color="primary" @click.prevent="BayarNontunai">Bayar Sekarang</v-btn>
+                      </v-col>
+                    </v-col>
+                  </v-row>
+                </v-col>
+              </v-col>
+              <v-banner>
+                <v-row>
+                  <v-col cols="auto">
+                    <v-icon size="22" color="primary">{{ icons.mdiCashCheck }}</v-icon>
+                  </v-col>
+                  <v-col @click="togglePaymentcash">Tunai</v-col>
+                  <v-col cols="auto">
+                    <v-icon size="22">{{ icons.mdiChevronRight }}</v-icon>
+                  </v-col>
+                </v-row>
+              </v-banner>
+              <v-col v-if="showPaymentcash">
+                <v-col class="ml-3">
+                  <v-row>
+                    <v-col cols="auto">
+                      <v-col>
+                        <v-btn color="primary" @click.prevent="redirectToLoketPayment">Bayar Cash Sekarang</v-btn>
                       </v-col>
                     </v-col>
                   </v-row>
                 </v-col>
               </v-col>
             </div>
-            <!-- </v-radio-group> -->
           </v-col>
-          <!-- </v-row> -->
-          <!-- </v-banner> -->
         </v-container>
       </div>
     </v-card>
@@ -212,6 +212,12 @@ export default {
     },
   },
   methods: {
+    redirectToLoketPayment() {
+      this.$router.push({
+        name: "loket-payment",
+        params: { id_schedule: this.id_schedule }
+      });
+    },
     formatDate(date) {
       moment.locale("id");
       return moment(date).format("dddd, Do MMMM YYYY");
@@ -248,7 +254,6 @@ export default {
     BayarCash() {
       const access_token = localStorage.getItem("access_token");
       const email = this.isAccount ? this.bookings.email : null;
-      console.log('email', this.bookings.email);
       axios
         .post(
           "api/bookings",
@@ -269,7 +274,6 @@ export default {
           }
         )
         .then((response) => {
-          // tampilkan SweetAlert jika pembayaran berhasil
           Swal.fire({
             icon: "success",
             title: "Pembayaran Berhasil",
@@ -298,7 +302,6 @@ export default {
         cancelButtonText: "Tidak",
         confirmButtonColor: "#307475",
       }).then((result) => {
-        /* Read more about isConfirmed, isDenied below */
         if (result.isConfirmed) {
           this.$router.push({
             name: "pages-pemesanan",
@@ -338,24 +341,64 @@ export default {
               });
             }, 1000);
 
-            // console.log(data);
-            // if (data.code === 200 && data.data.virtual_account_info.how_to_pay_api) {
-            //   const howToPayApi = data.data.virtual_account_info.how_to_pay_api;
-            //   console.log(howToPayApi)
-            //   this.$router.push({
-            //     name: 'pembayaran-instruction-bca',
-            //     params: { howToPayApi: howToPayApi }
-            //   });
+            if (data.code === 200 && data.data.virtual_account_info.how_to_pay_api) {
+              const howToPayApi = data.data.virtual_account_info.how_to_pay_api;
+              this.$router.push({
+                name: 'pembayaran-instruction-bca',
+                params: { howToPayApi: howToPayApi }
+              });
 
-            // } else {
-            //   console.error("Invalid response or missing how_to_pay_page XML");
-            // }
+            } else {
+              console.error("Invalid response or missing how_to_pay_page XML");
+            }
           });
       } catch (error) {
         console.error(error);
       } finally {
         this.loading = false;
       }
+    },
+    BayarLangsung() {
+      const access_token = localStorage.getItem("access_token");
+      const email = this.isAccount ? this.bookings.email : null;
+      axios
+        .post(
+          "api/bookings/bayarcash",
+          {
+            schedules_id: this.id_schedule,
+            name: this.passengerData.name,
+            number_phone: this.passengerData.number_phone,
+            num_seats: this.selectedSeat,
+            alamatJemput: this.passengerData.alamatJemput,
+            harga: this.harga,
+            status: "berhasil",
+            email: email
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${access_token}`,
+            },
+          }
+        )
+        .then((response) => {
+          Swal.fire({
+            icon: "success",
+            title: "Pembayaran Berhasil",
+            text: "Terima kasih sudah melakukan pembayaran",
+          });
+
+          this.$router.push({
+            name: "pesananku",
+          });
+        })
+        .catch((error) => {
+          console.log(error);
+          Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "Terjadi kesalahan saat melakukan pembayaran",
+          });
+        });
     },
   },
 };

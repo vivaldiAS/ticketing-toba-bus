@@ -27,7 +27,7 @@
               <v-col cols="12" sm="4">
                 <v-card class="pa-2" outlined tile>
                   <h5>No.Tempat duduk</h5>
-                  <h6>{{ selectedSeat }}</h6>
+                  <h6>{{ selectedSeat.join(', ') }}</h6>
                 </v-card>
               </v-col>
             </v-row>
@@ -58,7 +58,7 @@
             <v-col cols="4" md="4" sm="4">
               <div class="pa-2" tile>
                 <h3>Seat</h3>
-                <h5>{{ selectedSeat }}</h5>
+                <h5>{{ selectedSeat.join(', ') }}</h5>
               </div>
             </v-col>
             <v-col cols="4" md="4" sm="4">
@@ -73,7 +73,7 @@
             <v-col cols="4" md="4" sm="4">
               <div class="pa-2" tile>
                 <h3>Harga</h3>
-                <h5>{{ item.harga | toRupiah }}</h5>
+                <h5>{{ item.harga * selectedSeat.length | toRupiah }}</h5>
               </div>
             </v-col>
             <v-col cols="6" md="6" sm="6">
