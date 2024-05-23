@@ -7,7 +7,11 @@
           <h2>{{ item.derpature }} -> {{ item.arrival }}</h2>
           <h5>{{ formatHour(item.tanggal) }}</h5>
           <h5>{{ formatDate(item.tanggal) }}</h5>
+<<<<<<< HEAD
           <h5>{{ item.harga * selectedSeat.length | toRupiah }}</h5>
+=======
+          <h5>{{ item.harga* selectedSeat.length | toRupiah }}</h5>
+>>>>>>> b60571efd7e7f968ac5170fdbdc5e9dee257317f
         </div>
         <template class="text-center">
           <v-container class="grey lighten-5">
@@ -341,8 +345,15 @@ export default {
               });
             }, 1000);
 
+<<<<<<< HEAD
             if (data.code === 200 && data.data.virtual_account_info.how_to_pay_api) {
               const howToPayApi = data.data.virtual_account_info.how_to_pay_api;
+=======
+            console.log(data);
+            if (data.code === 200 && data.data.virtual_account_info.how_to_pay_api) {
+              const howToPayApi = data.data.virtual_account_info.how_to_pay_api;
+              console.log(howToPayApi)
+>>>>>>> b60571efd7e7f968ac5170fdbdc5e9dee257317f
               this.$router.push({
                 name: 'pembayaran-instruction-bca',
                 params: { howToPayApi: howToPayApi }

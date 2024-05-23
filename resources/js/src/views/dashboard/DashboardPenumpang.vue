@@ -230,18 +230,29 @@ export default {
         });
     },
     filterSchedules() {
-      let filteredSchedules = this.schedules;
+  let filteredSchedules = this.schedules;
 
+<<<<<<< HEAD
 filteredSchedules = filteredSchedules.filter(schedule =>
   moment(schedule.tanggal).isSameOrAfter(moment(), 'day')
       );
 
       if (this.selectedDate) {
         filteredSchedules = filteredSchedules.filter(
+=======
+  // Filter out schedules where the date has passed
+  filteredSchedules = filteredSchedules.filter(schedule =>
+    moment(schedule.tanggal).isSameOrAfter(moment(), 'day')
+  );
+
+  if (this.selectedDate) {
+    filteredSchedules = filteredSchedules.filter(
+>>>>>>> b60571efd7e7f968ac5170fdbdc5e9dee257317f
       schedule =>
         moment(schedule.tanggal).format("YYYY-MM-DD") ===
         moment(this.selectedDate).format("YYYY-MM-DD")
     );
+<<<<<<< HEAD
       }
 
       if (this.selectedRoute) {
@@ -265,6 +276,25 @@ filteredSchedules = filteredSchedules.filter(schedule =>
 
       return filteredSchedules;
     },
+=======
+  }
+
+  if (this.selectedRoute) {
+    console.selectedRoute;
+    filteredSchedules = filteredSchedules.filter(
+      schedule => schedule.id === this.selectedRoute
+    );
+  }
+  if (this.selectedType) {
+    console.log(this.selectedType);
+    filteredSchedules = filteredSchedules.filter(
+      schedule => schedule.type === this.selectedType
+    );
+  }
+  return filteredSchedules;
+},
+
+>>>>>>> b60571efd7e7f968ac5170fdbdc5e9dee257317f
     countBookings(bookings) {
       const count = {};
       bookings.forEach((booking) => {
