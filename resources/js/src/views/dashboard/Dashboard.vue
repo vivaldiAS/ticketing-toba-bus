@@ -1,45 +1,50 @@
 <template>
   <div>
-
-    <div v-if="userRole == 'passenger'">
+    <div v-if="userRole === 'passenger'">
       <DashboardPenumpang></DashboardPenumpang>
     </div>
-    <div v-if="userRole == 'driver'">
+    <div v-else-if="userRole === 'driver'">
       <DashboardDriver></DashboardDriver>
     </div>
-    <div v-if="userRole == 'admin_loket'">
+    <div v-else-if="userRole === 'admin_loket'">
       <DashboardAdmin></DashboardAdmin>
     </div>
-    <div v-if="userRole == 'admin_kantor'">
+    <div v-else-if="userRole === 'admin_kantor'">
       <DashboardAdminLoket></DashboardAdminLoket>
     </div>
-    <div v-if="userRole == 'direksi'">
+    <div v-else-if="userRole === 'direksi'">
       <DashboardDireksi></DashboardDireksi>
+    </div>
+    <div v-else>
+      <DashboardTanpaRole></DashboardTanpaRole>
     </div>
   </div>
 </template>
-<script>
 
+<script>
 import DashboardAdmin from './DashboardAdmin.vue';
 import DashboardPenumpang from './DashboardPenumpang.vue';
 import DashboardDriver from './DashboardDriver.vue';
 import DashboardAdminLoket from './DashboardAdminLoket.vue';
-import DashboardDireksi from './DashboardDireksi.vue'
+import DashboardDireksi from './DashboardDireksi.vue';
+import DashboardTanpaRole from './DashboardTanpaRole.vue';
+
 export default {
-  data(){
-    return{}
+  data() {
+    return {};
   },
-  components:{
+  components: {
     DashboardAdmin,
     DashboardPenumpang,
     DashboardDriver,
     DashboardAdminLoket,
-    DashboardDireksi
+    DashboardDireksi,
+    DashboardTanpaRole,
   },
   computed: {
     userRole() {
-      return this.$store.state.userRole
+      return this.$store.state.userRole;
     },
-  }
-}
+  },
+};
 </script>

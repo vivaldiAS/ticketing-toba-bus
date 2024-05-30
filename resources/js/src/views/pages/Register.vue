@@ -6,8 +6,8 @@
         <v-card-title class="d-flex align-center justify-center py-7">
           <router-link to="/" class="d-flex align-center">
             <v-img
-              :src="require('@/assets/images/logos/logo-KBT.png').default"
-              max-height="120px"
+              :src="require('@/assets/images/logo/logo-color-bg putih.png').default"
+              max-height="100px"
               max-width="120px"
               alt="logo"
               contain

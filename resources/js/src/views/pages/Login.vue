@@ -6,7 +6,7 @@
         <v-card-title class="d-flex align-center justify-center py-7">
           <router-link :to="{ name: 'pages-login' }" class="d-flex align-center">
             <v-img
-              :src="require('@/assets/images/logos/logo-KBT.png').default"
+              :src="require('@/assets/images/logo/logo-color-bg putih.png').default"
               max-height="120px"
               max-width="120px"
               alt="logo"
@@ -19,7 +19,7 @@
         <!-- title -->
         <v-card-text>
           <p class="text-1xl font-weight-semibold text--primary mb-2 text-center">
-            Welcome to E-KBT
+            Welcome to E-TobaTrans
           </p>
           <p class="mb-2 text-center">Kepuasan Penumpang adalah Kebahagian Kami</p>
         </v-card-text>

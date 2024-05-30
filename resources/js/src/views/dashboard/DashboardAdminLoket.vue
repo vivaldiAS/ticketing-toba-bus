@@ -1,5 +1,6 @@
 <template>
   <div>
+    <h2>Selamat datang di dashboard admin {{ merk }}</h2> 
     <v-card class="mb-4">
       <v-card-text>
         <v-row>
@@ -12,7 +13,7 @@
             <div class="ms-3">
               <p class="text-xs mb-0">Supir</p>
               <h3 class="text-xl font-weight-semibold">
-                {{ this.supir }}
+                {{ supir }}
               </h3>
             </div>
           </v-col>
@@ -25,7 +26,7 @@
             <div class="ms-3">
               <p class="text-xs mb-0">Mobil</p>
               <h3 class="text-xl font-weight-semibold">
-                {{ this.mobil }}
+                {{ mobil }}
               </h3>
             </div>
           </v-col>
@@ -38,7 +39,7 @@
             <div class="ms-3">
               <p class="text-xs mb-0">Rute</p>
               <h3 class="text-xl font-weight-semibold">
-                {{ this.rute }}
+                {{ rute }}
               </h3>
             </div>
           </v-col>
@@ -53,7 +54,6 @@
 // eslint-disable-next-line object-curly-newline
 import axios from "axios";
 import ListSchedule from "../pages/Schedule/list-schedule.vue";
-
 import {
   mdiAccountOutline,
   mdiCurrencyUsd,
@@ -73,6 +73,7 @@ export default {
       supir: 0,
       mobil: 0,
       rute: 0,
+      merk: "", // Initialize merk state
     };
   },
   setup() {
@@ -89,24 +90,47 @@ export default {
     };
   },
   mounted() {
-    const access_token = localStorage.getItem("access_token");
-    axios
-      .get(`/api/Dashboard/direksi/`, {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      })
-      .then((response) => {
-        this.SemuaData = response.data;
-        this.supir = this.SemuaData.supir;
-        this.mobil = this.SemuaData.mobil;
-        this.rute = this.SemuaData.rute;
-        console.log(this.SemuaData);
-        console.log(this.SemuaData.supir);
-      })
-      .catch((error) => {
-        console.log(error);
-      });
+    this.getDashboardData();
+    this.getBrandData();
+  },
+  methods: {
+    getDashboardData() {
+      const access_token = localStorage.getItem("access_token");
+      axios
+        .get(`/api/Dashboard/direksi/`, {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        })
+        .then((response) => {
+          this.SemuaData = response.data;
+          this.supir = this.SemuaData.supir;
+          this.mobil = this.SemuaData.mobil;
+          this.rute = this.SemuaData.rute;
+          console.log(this.SemuaData);
+          console.log(this.SemuaData.supir);
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
+    getBrandData() {
+      const access_token = localStorage.getItem("access_token");
+      axios
+        .get("http://127.0.0.1:8000/api/brandsyanglogin", {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        })
+        .then((response) => {
+          if (response.data.length > 0) {
+            this.merk = response.data[0].merk;
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
   },
   components: { ListSchedule },
 };

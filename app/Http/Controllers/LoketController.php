@@ -11,7 +11,19 @@ use Illuminate\Support\Facades\Validator;
 
 class LoketController extends BaseController
 {
+    public function getLoketsByAdmin()
+    {
+        // Ambil ID pengguna yang sedang login
+        $adminId = Auth::id();
 
+        // Ambil data loket berdasarkan admin_id menggunakan Query Builder
+        $lokets = DB::table('lokets')
+                    ->where('admin_id', $adminId)
+                    ->get();
+
+        // Kembalikan response JSON dengan data lokets
+        return response()->json(['data' => $lokets]);
+    }
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [

@@ -10,11 +10,39 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Carbon\carbon;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log; // Import Log
+
 
 class ScheduleController extends BaseController
 {
+    public function SelectOnes($id)
+    {
+        $schedule = DB::table('schedules')
+        ->join('buses', 'buses.id', '=', 'schedules.bus_id')
+        ->join('users', 'buses.supir_id', '=', 'users.id')
+        ->join('routes', 'schedules.route_id', '=', 'routes.id')
+        ->join('bookings as b', 'b.schedules_id', '=', 'schedules.id')
+        ->where('b.id', '=', $id)
+        ->select(
+            'schedules.id as schedule_id',
+            'schedules.tanggal',
+            'schedules.harga',
+            'schedules.bus_id',
+            'schedules.route_id',
+            'buses.*',
+            'routes.*',
+            'users.name',
+            'b.id as booking_id'
+        )
+        ->get();
+    
+        return $this->sendResponse($schedule, 'Booking Retrieved Successfully');
+    }
     public function store(Request $request)
     {
+        // Log the incoming request data
+        Log::info('Store Schedule Request Data:', $request->all());
+    
         $validator = Validator::make($request->all(), [
             'bus_id' => 'required',
             'route_id' => 'required',
@@ -26,17 +54,23 @@ class ScheduleController extends BaseController
             'tanggal.required' => 'Tanggal Harus Di Isi!',
             'tanggal.date' => 'Format Tanggal Salah!',
             'harga.required' => 'Harga harus di isi!'
-
         ]);
-
+    
         if ($validator->fails()) {
             return $this->sendError('Input tidak boleh kosong', $validator->errors(), 422);
         }
-        $input = $request->all();
-        $input['status'] = 'not_started';
-        Schedule::create($input);
-
-        return $this->sendResponse($input, 'Berhasil Membuat Jadwal Baru');
+    
+        try {
+            $input = $request->all();
+            $input['status'] = 'not_started';
+            Schedule::create($input);
+            Log::info('Schedule Created:', $input);
+            return $this->sendResponse($input, 'Berhasil Membuat Jadwal Baru');
+        } catch (\Exception $e) {
+            // Log the exception
+            Log::error('Error creating schedule:', ['error' => $e->getMessage()]);
+            return response()->json(['error' => 'Internal Server Error'], 500);
+        }
     }
     public function ShowAll()
     {

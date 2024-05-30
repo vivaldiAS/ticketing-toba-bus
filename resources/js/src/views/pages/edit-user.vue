@@ -78,6 +78,8 @@ export default {
           this.$router.push({ name: 'pages-admin-loket' }); // Arahkan ke halaman list admin
         } else if (response.data.data.role_id == 3) {
           this.$router.push({ name: 'pages-supir' }); // Arahkan ke halaman list supir
+        } else if (response.data.data.role_id == 1) {
+          this.$router.push({ name: 'list-admin-kantor' }); // Arahkan ke halaman list brands
         }
       } catch (error) {
         console.error(error);

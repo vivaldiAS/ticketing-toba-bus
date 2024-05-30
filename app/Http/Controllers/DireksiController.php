@@ -10,6 +10,79 @@ use App\Models\Brand;
 
 class DireksiController extends Controller
 {
+    public function brandsyanglogin()
+    {
+        $adminId = Auth::id();
+    
+        $data = DB::table('brands')
+            ->where('admin_id', $adminId)
+            ->get();
+    
+        return response()->json($data);
+    }
+    
+    public function updateBrandsStatus($id)
+    {
+        $brand = DB::table('brands')->where('id', $id)->first();
+        if ($brand) {
+            $newStatus = $brand->status == 1 ? 0 : 1;
+            DB::table('brands')
+                ->where('id', $id)
+                ->update(['status' => $newStatus]);
+        }
+    }
+    public function updateBrands($id)
+    {
+        $input = request()->validate([
+            'merk' => 'required|string',
+            'admin_id' => 'required|integer|unique:brands,admin_id,' . $id,
+        ]);
+    
+        $updated = DB::table('brands')
+                    ->where('id', $id)
+                    ->update([
+                        'merk' => $input['merk'],
+                        'admin_id' => $input['admin_id'],
+                    ]);
+    
+        if ($updated) {
+            $brand = DB::table('brands')->where('id', $id)->first();
+            return response()->json(['data' => $brand, 'message' => 'Data Berhasil']);
+        } else {
+            return response()->json(['message' => 'Brand not found or no change made'], 404);
+        }
+    }
+    
+
+    public function adminkantorNotAssociated()
+    {
+        $data = DB::table('users')
+            ->leftJoin('brands', 'brands.admin_id', '=', 'users.id')
+            ->where('users.role_id', 1)
+            ->whereNull('brands.merk')
+            ->select('users.*', 'brands.merk')
+            ->get();
+    
+        return response()->json($data);
+    }
+    
+    public function getadminkantor()
+    {
+        $data = DB::table('users')
+            ->where('role_id', 1)
+            ->get();
+
+        return response()->json($data);
+    }
+
+    public function CountAdminKantor()
+    {
+        $count = DB::table('users')
+            ->where('role_id', 1)
+            ->count();
+
+        return response()->json(['count' => $count]);
+    }
     public function index()
     {
         // Periksa apakah pengguna telah diautentikasi
@@ -77,17 +150,17 @@ class DireksiController extends Controller
     {
         $brands = DB::table('brands')
         ->join('users', 'brands.admin_id', '=', 'users.id')
-        ->select('brands.id', 'brands.merk', 'brands.gambar_qris', 'brands.admin_id', 'users.name')
+        ->select('brands.*', 'users.name', 'users.email')
         ->get();
 
-        return Response::json(['data' => $brands]);
+        return Response::json($brands);
     }
 
     public function getBrandsById($id)
     {
         $brand = DB::table('brands')
             ->join('users', 'brands.admin_id', '=', 'users.id')
-            ->select('brands.id', 'brands.merk', 'brands.gambar_qris', 'brands.admin_id', 'users.name')
+            ->select('brands.id', 'brands.merk','brands.admin_id', 'users.name')
             ->where('brands.id', $id)
             ->first();
 

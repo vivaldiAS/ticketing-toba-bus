@@ -19,46 +19,24 @@
             </v-icon>
           </v-avatar>
           <div class="ms-3">
-            <p class="text-xs mb-0">Supir</p>
+            <p class="text-xs mb-0">Admin Kantor</p>
             <h3 class="text-xl font-weight-semibold">
-              {{ this.supir }}
-            </h3>
-          </div>
-        </v-col>
-        <v-col cols="6" md="4" class="d-flex align-center">
-          <v-avatar size="44" color="success" rounded class="elevation-1">
-            <v-icon dark color="white" size="30">
-              {{ icons.mdiCar }}
-            </v-icon>
-          </v-avatar>
-          <div class="ms-3">
-            <p class="text-xs mb-0">Mobil</p>
-            <h3 class="text-xl font-weight-semibold">
-              {{ this.mobil }}
-            </h3>
-          </div>
-        </v-col>
-        <v-col cols="6" md="4" class="d-flex align-center">
-          <v-avatar size="44" color="warning" rounded class="elevation-1">
-            <v-icon dark color="white" size="30">
-              {{ icons.mdiTrendingUp }}
-            </v-icon>
-          </v-avatar>
-          <div class="ms-3">
-            <p class="text-xs mb-0">Rute</p>
-            <h3 class="text-xl font-weight-semibold">
-              {{ this.rute }}
+              {{ this.adminkantor }}
             </h3>
           </div>
         </v-col>
       </v-row>
     </v-card-text>
   </v-card>
+
+
+
 </template>
 
 <script>
 // eslint-disable-next-line object-curly-newline
 import axios from "axios";
+
 import {
   mdiAccountOutline,
   mdiCurrencyUsd,
@@ -72,7 +50,7 @@ export default {
   data() {
     return {
       SemuaData: {},
-      supir: 0,
+      adminkantor: 0,
       mobil: 0,
       rute: 0,
     };
@@ -95,18 +73,16 @@ export default {
     const access_token = localStorage.getItem("access_token");
 
     axios
-      .get(`/api/Dashboard/direksi/`, {
+      .get(`/api/statistik/direksi`, {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
       })
       .then((response) => {
         this.SemuaData = response.data;
-        this.supir = this.SemuaData.supir;
-        this.mobil = this.SemuaData.mobil;
-        this.rute = this.SemuaData.rute;
+        this.adminkantor = this.SemuaData.count;
         console.log(this.SemuaData);
-        console.log(this.SemuaData.supir);
+        console.log(this.SemuaData.adminkantor);
       })
       .catch((error) => {
         console.log(error);

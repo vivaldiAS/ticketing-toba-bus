@@ -12,8 +12,8 @@
             hide-details
           />
         </v-col>
-        <v-col
-          ><v-select
+        <v-col>
+          <v-select
             v-model="selectedRoute"
             :items="route"
             id="id"
@@ -22,16 +22,16 @@
             placeholder="Pilih Rute"
             clearable
             hide-details
-          ></v-select
+          ></v-select>
         ></v-col>
-        <v-col
-          ><v-select
+        <v-col>
+          <v-select
             v-model="selectedType"
             :items="['Ekonomi', 'Eksekutif']"
             placeholder="Pilih Type"
             clearable
             hide-details
-          ></v-select
+          ></v-select>
         ></v-col>
       </v-row>
     </v-container>
@@ -131,12 +131,14 @@
     ></v-pagination>
   </v-app>
 </template>
+
 <script>
 import axios from "axios";
 import moment from "moment";
 import "moment/locale/id";
 import { mapActions } from "vuex";
 import { mdiCalendarClock, mdiAccountGroup, mdiAccount } from "@mdi/js";
+
 export default {
   setup() {
     return {
@@ -188,7 +190,7 @@ export default {
     },
     formatDate(date) {
       moment.locale("id");
-      return moment(date).format("dddd, Do MMMM YYYY, hh:mm");
+      return moment(date).format("dddd, Do MMMM YYYY, HH:mm"); // format 24 jam
     },
     changePage(page) {
       this.currentPage = page;
@@ -196,6 +198,7 @@ export default {
     filterSchedules() {
       let filteredSchedules = this.paginatedSchedules;
 
+      // Apply the date filter
       if (this.selectedDate) {
         filteredSchedules = filteredSchedules.filter(
           (schedule) =>
@@ -204,18 +207,26 @@ export default {
         );
       }
 
+      // Apply the route filter
       if (this.selectedRoute) {
-        console.selectedRoute;
         filteredSchedules = filteredSchedules.filter(
           (schedule) => schedule.id === this.selectedRoute
         );
       }
+
+      // Apply the type filter
       if (this.selectedType) {
-        console.log(this.selectedType);
         filteredSchedules = filteredSchedules.filter(
           (schedule) => schedule.type === this.selectedType
         );
       }
+
+      // Filter out expired schedules
+      const currentDate = new Date();
+      filteredSchedules = filteredSchedules.filter((item) => {
+        const scheduleDate = new Date(item.tanggal);
+        return currentDate <= scheduleDate;
+      });
 
       return filteredSchedules;
     },
@@ -230,11 +241,8 @@ export default {
         })
         .then((response) => {
           this.schedules = response.data.data;
-          this.st = response.data.total;
           this.bookingCounts = this.countBookings(response.data.total);
-
           console.log(this.schedules);
-          console.log(this.st);
         })
         .catch((error) => {
           console.log(error);
@@ -257,7 +265,7 @@ export default {
 
     this.getSchedule();
     axios
-      .get("api/routes/show/all", {
+      .get("api/routes", {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
@@ -270,11 +278,8 @@ export default {
               id: item.id,
               derpatures: item.derpature + " - " + item.arrival,
               derpature: item.derpature + " - " + item.arrival,
-              // derpature: item.derpature,
-              // arrival: item.arrival,
             };
           });
-        // console.log(this.route)
       })
       .catch((error) => {
         console.log(error);
@@ -292,6 +297,7 @@ export default {
   },
 };
 </script>
+
 <style scoped>
 .harga {
   padding: 17px;

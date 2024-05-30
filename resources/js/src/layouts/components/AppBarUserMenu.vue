@@ -178,7 +178,7 @@ methods: {
             localStorage.removeItem('user_data');
             localStorage.removeItem('expires_at');
             this.$store.commit('SET_USER_ROLE', '');
-            this.$router.push('/');
+            this.$router.push('/login');
           })
           .catch(error => {
             console.log(error.response.data.message);

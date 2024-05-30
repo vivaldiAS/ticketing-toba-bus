@@ -1,6 +1,12 @@
 <template>
   <v-app>
     <v-container>
+      <center>
+        <h1>{{ namaLoket }}</h1>
+        <br>
+        <hr>
+        <br>
+      </center>
       <v-row>
         <v-col>
           <v-text-field
@@ -12,8 +18,8 @@
             hide-details
           />
         </v-col>
-        <v-col
-          ><v-select
+        <v-col>
+          <v-select
             v-model="selectedRoute"
             :items="route"
             id="id"
@@ -22,17 +28,17 @@
             placeholder="Pilih Rute"
             clearable
             hide-details
-          ></v-select
-        ></v-col>
-        <v-col
-          ><v-select
+          ></v-select>
+        </v-col>
+        <v-col>
+          <v-select
             v-model="selectedType"
             :items="['Economi', 'Executive']"
             placeholder="Pilih Type"
             clearable
             hide-details
-          ></v-select
-        ></v-col>
+          ></v-select>
+        </v-col>
       </v-row>
     </v-container>
     <h3 class="my-4">
@@ -56,9 +62,9 @@
         </v-col>
         <v-col>
           <div class="d-flex justify-content-between">
-            <v-card-title class="text-h6" width="100%"
-              >{{ item.derpature }} - {{ item.arrival }}</v-card-title
-            >
+            <v-card-title class="text-h6" width="100%">
+              {{ item.derpature }} - {{ item.arrival }}
+            </v-card-title>
             <div class="text-h6 harga" style="color: #ff4c51">
               {{ item.harga | toRupiah }}
             </div>
@@ -126,12 +132,14 @@
     ></v-pagination>
   </v-app>
 </template>
+
 <script>
 import axios from "axios";
 import moment from "moment";
 import "moment/locale/id";
 import { mapActions } from "vuex";
 import { mdiCalendarClock, mdiAccountGroup, mdiAccount } from "@mdi/js";
+
 export default {
   setup() {
     return {
@@ -156,6 +164,7 @@ export default {
       selectedDate: null,
       selectedRoute: null,
       selectedType: null,
+      namaLoket: "", // Menyimpan nama loket
     };
   },
   filters: {
@@ -193,7 +202,7 @@ export default {
     },
     formatDate(date) {
       moment.locale("id");
-      return moment(date).format("dddd, Do MMMM YYYY, hh:mm");
+      return moment(date).format("dddd, Do MMMM YYYY, HH:mm");
     },
     changePage(page) {
       this.currentPage = page;
@@ -210,13 +219,11 @@ export default {
       }
 
       if (this.selectedRoute) {
-        console.selectedRoute;
         filteredSchedules = filteredSchedules.filter(
           (schedule) => schedule.id === this.selectedRoute
         );
       }
       if (this.selectedType) {
-        console.log(this.selectedType);
         filteredSchedules = filteredSchedules.filter(
           (schedule) => schedule.type === this.selectedType
         );
@@ -256,11 +263,31 @@ export default {
       });
       return count;
     },
+    getLoketByAdmin() {
+      const access_token = localStorage.getItem("access_token");
+
+      axios
+        .get("/api/lokets-by-admin", {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        })
+        .then((response) => {
+          if (response.data.data.length > 0) {
+            this.namaLoket = response.data.data[0].nama_loket;
+          }
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
   },
   mounted() {
     const access_token = localStorage.getItem("access_token");
 
     this.getSchedule();
+    this.getLoketByAdmin(); // Panggil metode getLoketByAdmin
+
     axios
       .get("api/routes/show/all", {
         headers: {
@@ -273,11 +300,8 @@ export default {
             id: item.id,
             derpatures: item.derpature + " - " + item.arrival,
             derpature: item.derpature + " - " + item.arrival,
-            // derpature: item.derpature,
-            // arrival: item.arrival,
           };
         });
-        // console.log(this.route)
       })
       .catch((error) => {
         console.log(error);
@@ -285,6 +309,7 @@ export default {
   },
 };
 </script>
+
 <style scoped>
 .harga {
   padding: 17px;

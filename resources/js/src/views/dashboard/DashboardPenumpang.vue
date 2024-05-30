@@ -3,12 +3,12 @@
     <!-- Header Section -->
     <v-row>
       <v-container>
-        <v-img height="400px" :src="require('@/assets/images/logos/KBT-BG.jpg').default">
+        <v-img height="400px" :src="require('@/assets/images/logos/latarbelakang.jpg').default">
           <v-card-title>
             <v-btn small color="primary" class="btn-pesan-ticket"> Pesan E-Ticket </v-btn>
           </v-card-title>
           <v-card-title class="text-title">
-            <h5 class="white--text">Pelayanan terbaik untuk perjalanan kamu</h5>
+            <h5 class="white--text">Pelayanan terbaik untuk perjalananmu</h5>
           </v-card-title>
         </v-img>
       </v-container>
@@ -16,22 +16,23 @@
 
     <!-- Brand Selection Menu -->
     <v-row>
-  <v-container>
-    <v-row style="justify-content: flex-end; padding: 1rem;">
-      <v-col>
-        <v-select
-          v-model="selectedBrand"
-          :items="brands"
-          label="Pilih Merk Bus"
-          placeholder="Pilih Merk Bus"
-          clearable
-          hide-details
-        ></v-select>
-      </v-col>
+      <v-container>
+        <v-row style="justify-content: flex-end; padding: 1rem;">
+          <v-col>
+            <v-select
+              v-model="selectedBrand"
+              :items="brandOptions"
+              item-text="merk"
+              item-value="id"
+              label="Pilih Merk Bus"
+              placeholder="Pilih Merk Bus"
+              clearable
+              hide-details
+            ></v-select>
+          </v-col>
+        </v-row>
+      </v-container>
     </v-row>
-  </v-container>
-</v-row>
-
 
     <!-- Schedule Section -->
     <v-container>
@@ -122,16 +123,16 @@
                     >
                       PENUH
                     </h3>
-                    <small v-else color="secondary"
-                      >Tersedia : {{ item.number_of_seats - count - 1 }} Kursi
+                    <small v-else color="secondary">
+                      Tersedia : {{ item.number_of_seats - count - 1 }} Kursi
                     </small>
                   </div>
                   <div
                     class="col-md-3"
                     v-if="!Object.keys(bookingCounts).includes(String(item.schedule_id))"
                   >
-                    <small color="secondary"
-                      >Tersedia : {{ item.number_of_seats - 1 }} Kursi
+                    <small color="secondary">
+                      Tersedia : {{ item.number_of_seats - 1 }} Kursi
                     </small>
                   </div>
                   <v-row class="col-md-4 btn-pesan">
@@ -150,7 +151,6 @@
         </v-row>
       </v-card>
     </v-container>
-
   </v-app>
 </template>
 
@@ -175,7 +175,7 @@ export default {
     return {
       selectedBrand: null,
       brands: [],
-      brandOptions: [],
+      brandOptions: [], // Initialize the brandOptions array
       selectedDate: null,
       selectedRoute: null,
       selectedType: null,
@@ -190,15 +190,16 @@ export default {
   },
   methods: {
     getBrands() {
-    axios
-      .get("/api/allBrands")
-      .then((response) => {
-        this.brandOptions = response.data.data;
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-  },
+      axios
+        .get("/api/allBrands")
+        .then((response) => {
+          console.log(response.data); // Log the response to check the data
+          this.brandOptions = response.data; // Directly assign the data array
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+    },
     ...mapActions(["setSelectedSeat"]),
     selectBus(id_schedule, harga) {
       this.$store.dispatch("setBusData", { id_schedule, harga });
@@ -230,71 +231,37 @@ export default {
         });
     },
     filterSchedules() {
-  let filteredSchedules = this.schedules;
-
-<<<<<<< HEAD
-filteredSchedules = filteredSchedules.filter(schedule =>
-  moment(schedule.tanggal).isSameOrAfter(moment(), 'day')
+    let filteredSchedules = this.schedules;
+    filteredSchedules = filteredSchedules.filter(schedule =>
+      moment(schedule.tanggal).isSameOrAfter(moment(), 'day') &&
+      moment(schedule.tanggal).isSameOrAfter(moment(), 'hour')
+    );
+    if (this.selectedDate) {
+      filteredSchedules = filteredSchedules.filter(schedule =>
+        moment(schedule.tanggal).format('YYYY-MM-DD') === moment(this.selectedDate).format('YYYY-MM-DD')
       );
+    }
 
-      if (this.selectedDate) {
-        filteredSchedules = filteredSchedules.filter(
-=======
-  // Filter out schedules where the date has passed
-  filteredSchedules = filteredSchedules.filter(schedule =>
-    moment(schedule.tanggal).isSameOrAfter(moment(), 'day')
-  );
+    if (this.selectedRoute) {
+      filteredSchedules = filteredSchedules.filter(schedule => schedule.id === this.selectedRoute);
+    }
 
-  if (this.selectedDate) {
-    filteredSchedules = filteredSchedules.filter(
->>>>>>> b60571efd7e7f968ac5170fdbdc5e9dee257317f
-      schedule =>
-        moment(schedule.tanggal).format("YYYY-MM-DD") ===
-        moment(this.selectedDate).format("YYYY-MM-DD")
-    );
-<<<<<<< HEAD
-      }
+    if (this.selectedType) {
+      filteredSchedules = filteredSchedules.filter(schedule => schedule.type === this.selectedType);
+    }
 
-      if (this.selectedRoute) {
-        filteredSchedules = filteredSchedules.filter(
-          schedule => schedule.id === this.selectedRoute
-        );
-      }
+    if (this.selectedBrand) {
+      const selectedBrandId = this.selectedBrand; // Directly use the selected brand id
+      filteredSchedules = filteredSchedules.filter(schedule => schedule.brand_id === selectedBrandId);
+    }
 
-      if (this.selectedType) {
-        filteredSchedules = filteredSchedules.filter(
-          schedule => schedule.type === this.selectedType
-        );
-      }
-
-      if (this.selectedBrand) {
-    const selectedBrandId = this.brandOptions.find(brand => brand.merk === this.selectedBrand).id;
-    filteredSchedules = filteredSchedules.filter(
-      schedule => schedule.brand_id === selectedBrandId
-    );
-  }
-
-      return filteredSchedules;
-    },
-=======
-  }
-
-  if (this.selectedRoute) {
-    console.selectedRoute;
-    filteredSchedules = filteredSchedules.filter(
-      schedule => schedule.id === this.selectedRoute
-    );
-  }
-  if (this.selectedType) {
-    console.log(this.selectedType);
-    filteredSchedules = filteredSchedules.filter(
-      schedule => schedule.type === this.selectedType
-    );
-  }
-  return filteredSchedules;
+    return filteredSchedules;
+  },
+formatDate(date) {
+  moment.locale('id');
+  return moment(date).format('dddd, Do MMMM YYYY, HH:mm:ss'); // Format jam menggunakan HH untuk 24 jam
 },
 
->>>>>>> b60571efd7e7f968ac5170fdbdc5e9dee257317f
     countBookings(bookings) {
       const count = {};
       bookings.forEach((booking) => {
@@ -313,7 +280,7 @@ filteredSchedules = filteredSchedules.filter(schedule =>
 
     this.getSchedule();
     axios
-      .get("api/routes/show/all", {
+      .get("api/routes", {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
@@ -325,17 +292,6 @@ filteredSchedules = filteredSchedules.filter(schedule =>
             derpatures: item.derpature + " - " + item.arrival,
             derpature: item.derpature + " - " + item.arrival,
           };
-        });
-      })
-      .catch((error) => {
-        console.log(error);
-      });
-
-    axios
-      .get("/api/allBrands")
-      .then((response) => {
-        this.brands = response.data.data.map((brand) => {
-          return brand.merk;
         });
       })
       .catch((error) => {
@@ -434,7 +390,5 @@ filteredSchedules = filteredSchedules.filter(schedule =>
     position: absolute;
     text-align: center;
   }
-
 }
 </style>
-

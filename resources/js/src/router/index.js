@@ -4,8 +4,18 @@ import store from '../store/index'
 
 Vue.use(VueRouter)
 
-const routes = [{
+const routes = [
+  {
     path: '/',
+    name: 'pages-dashboard',
+    component: () => import('@/views/dashboard/DashboardTanpaRole.vue'),
+    meta: {
+      requiresAuth: false,
+      layout: 'blank',
+    },
+  },
+  {
+    path: '/login',
     name: 'pages-login',
     component: () => import('@/views/pages/Login.vue'),
     meta: {
@@ -13,6 +23,26 @@ const routes = [{
       layout: 'blank',
     },
   },
+
+  
+
+  {
+    path: '/pesanan-tunai-online/:id',
+    name: 'pesananTunaiOnline',
+    component: () => import('@/views/pages/Pemesanan/pesanan-tunai-online.vue')
+  },  
+
+  {
+    path: '/konfirmasi-booking-tunai',
+    name: 'konfirmasi-booking-tunai',
+    component: () => import('@/views/pages/Pemesanan/konfirmasi-booking-tunai.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresRole: ['admin_loket', 'passenger'],
+      title: 'Konfirmasi Pesanan'
+    }
+  },
+
   {
     path: '/forgot-password',
     name: 'pages-forgot-password',
@@ -85,6 +115,17 @@ const routes = [{
       requiresRole: 'admin_kantor',
     },
   },
+
+  {
+    path: '/add-brands',
+    name: 'pages-add-brands',
+    component: () => import('@/views/pages/Brands/add-brands.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresRole: 'direksi',
+    },
+  },
+
   {
     path: '/edit-loket/:id',
     name: 'pages-edit-lokets',
@@ -94,15 +135,37 @@ const routes = [{
       requiresRole: 'admin_kantor',
     },
   },
+
+  {
+    path: '/edit-brands/:id',
+    name: 'pages-edit-brands',
+    component: () => import('@/views/pages/Brands/edit-brands.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresRole: 'direksi',
+    },
+  },
+
   {
     path: '/edit-user/:id',
     name: 'pages-edit-user',
     component: () => import('@/views/pages/edit-user.vue'),
     meta: {
       requiresAuth: true,
-      requiresRole: 'admin_kantor',
+      requiresRole: ['admin_kantor', 'direksi'],
     },
   },
+
+  {
+    path: '/list-brands',
+    name: 'list-brands',
+    component: () => import('@/views/pages/Brands/list-brands.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresRole: 'direksi',
+    },
+  },
+
   {
     path: '/add-supir',
     name: 'pages-add-supir',
@@ -110,6 +173,15 @@ const routes = [{
     meta: {
       requiresAuth: true,
       requiresRole: 'admin_kantor',
+    },
+  },
+  {
+    path: '/add-admin-kantor',
+    name: 'add-admin-kantor',
+    component: () => import('@/views/pages/Admin Kantor/add-admin-kantor.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresRole: 'direksi',
     },
   },
   {
@@ -175,6 +247,27 @@ const routes = [{
       requiresRole: 'admin_kantor',
     },
   },
+
+  {
+    path: '/default-schedule',
+    name: 'pages-default-schedule',
+    component: () => import('@/views/pages/Schedule/default-schedule.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresRole: 'admin_kantor',
+    },
+  },
+
+  {
+    path: '/add-default-schedule',
+    name: 'add-default-schedule',
+    component: () => import('@/views/pages/Schedule/add-default-schedule.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresRole: 'admin_kantor',
+    },
+  },
+
   {
     path: '/add-schedule',
     name: 'pages-add-schedule',
@@ -260,15 +353,16 @@ const routes = [{
     },
   },
   {
-    path: '/loket-payment/:id_schedule',
+    path: '/loket-payment/:bookingId', // Gunakan parameter bookingId
     name: 'loket-payment',
     component: () => import('@/views/pages/Pembayaran/lakukan-pembayaran-tunai.vue'),
     props: true,
     meta: {
-      requiresAuth: true,
-      requiresRole: ['admin_loket', 'passenger'],
+        requiresAuth: true,
+        requiresRole: ['admin_loket', 'passenger'],
     },
-  },  
+},
+
   {
     path: '/all-bus',
     name: 'all-bus',
@@ -360,6 +454,18 @@ const routes = [{
       requiresRole: ['admin_loket', 'direksi','admin_kantor'],
     },
   },
+
+  {
+    path: '/list-admin-kantor',
+    name: 'list-admin-kantor',
+    component: () => import('@/views/pages/Admin Kantor/list-admin-kantor.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresRole: ['admin_loket', 'direksi','admin_kantor'],
+    },
+  },
+
+
   {
     path: '/detail-catatan-keuangan/:tanggal',
     name: 'detail-catatan-keuangan',

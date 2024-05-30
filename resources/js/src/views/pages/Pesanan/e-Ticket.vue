@@ -61,7 +61,7 @@
               </tr>
               <tr>
                 <td class="value">{{ this.ticket.nomor_pintu }}</td>
-                <td class="value">{{ this.ticket.num_seats }}</td>
+                <td class="value">{{ this.ticket.seat_number }}</td>
               </tr>
               <tr>
                 <td class="label">Tanggal</td>

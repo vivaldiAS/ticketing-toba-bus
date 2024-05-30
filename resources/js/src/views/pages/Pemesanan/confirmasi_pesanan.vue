@@ -9,14 +9,9 @@
           <h5>{{ formatDate(item.tanggal) }}</h5>
         </div>
         <div class="d-flex justify-end">
-          <div v-if="userRole == 'passenger'" class="d-flex justify-start align-center">
+          <div v-if="userRole === 'passenger'" class="d-flex justify-start align-center">
             <label for="pesan-orang-lain" class="mr-2">Pesan untuk orang lain</label>
-            <v-switch
-              v-model="autoFill"
-              inset
-              color="secondary"
-              id="pesan-orang-lain"
-            ></v-switch>
+            <v-switch v-model="autoFill" inset color="secondary" id="pesan-orang-lain"></v-switch>
           </div>
         </div>
         <div>
@@ -32,6 +27,7 @@
               placeholder="Nama Lengkap"
               required
               hide-details
+              :readonly="!isEditable"
               :rules="[(v) => !!v || 'Nama harus diisi']"
             ></v-text-field>
           </v-col>
@@ -40,7 +36,6 @@
           <v-col cols="12" md="3">
             <label for="Nomor Handphone">Nomor Handphone</label>
           </v-col>
-
           <v-col>
             <v-text-field
               id="Nomor Handphone"
@@ -51,12 +46,13 @@
               placeholder="Nomor Handphone"
               required
               hide-details
+              :readonly="!isEditable"
               :rules="[(v) => !!v || 'Nomor Handphone harus diisi']"
             ></v-text-field>
           </v-col>
         </div>
 
-        <div v-if="userRole == 'admin_loket'">
+        <div v-if="userRole === 'admin_loket'">
           <h4>Dijemput</h4>
           <p>
             Apabila penumpang tidak memilih request penjemputan, maka penumpang akan
@@ -74,7 +70,7 @@
             ></v-text-field>
           </v-col>
         </div>
-        <div v-if="userRole == 'passenger'">
+        <div v-if="userRole === 'passenger'">
           <h4>Dijemput</h4>
           <p>
             Request penjemputan akan diarahkan ke lokasi rekomendasi sistem dengan posisi
@@ -147,16 +143,8 @@
 <script>
 import axios from "axios";
 import moment from "moment";
-import "moment/locale/id";
 import { mapState, mapActions } from "vuex";
-import {
-  mdiCalendarClock,
-  mdiAccountGroup,
-  mdiAccount,
-  mdiSofaSingleOutline,
-  mdiSofaSingle,
-  mdiChevronRight,
-} from "@mdi/js";
+import { mdiCalendarClock, mdiAccountGroup, mdiAccount, mdiSofaSingleOutline, mdiSofaSingle, mdiChevronRight } from "@mdi/js";
 
 export default {
   setup() {
@@ -182,6 +170,9 @@ export default {
     userRole() {
       return this.$store.state.userRole;
     },
+    isEditable() {
+      return this.userRole === 'admin_loket' || (this.userRole === 'passenger' && this.autoFill);
+    }
   },
   filters: {
     toRupiah(value) {
@@ -234,9 +225,11 @@ export default {
   },
   mounted() {
     this.getSchedule();
-    console.log(this.autoFill);
+    console.log('nilai autoFill:', this.autoFill);
+    console.log('nilai userRole:', this.userRole); // Add this line
     console.log('nilai selectedSeat pada halaman confirmasi-pesanan.vue:', this.selectedSeat);
-    if (!this.autoFill) {
+    // Update passenger.name and passenger.number_phone value when component is mounted
+    if (!this.autoFill && this.userRole === 'passenger') {
       const access_token = localStorage.getItem("access_token");
       axios
         .get("api/user/profile", {
@@ -253,15 +246,17 @@ export default {
           console.log(error);
         });
     } else {
-      // user will filled manual the input text
+      // user will fill the input text manually
     }
   },
   watch: {
     autoFill: function (val) {
       if (val) {
+        // If autoFill is active, set input field to not readonly
         this.passenger.name = "";
         this.passenger.number_phone = "";
-      } else {
+      } else if (this.userRole === 'passenger') {
+        // If autoFill is not active and userRole is 'passenger', set input field to readonly
         this.passenger.name = this.user.name;
         this.passenger.number_phone = this.user.phone_number;
       }
@@ -305,7 +300,7 @@ export default {
           name: this.passenger.name,
           number_phone: this.passenger.number_phone,
           alamatJemput: this.passenger.alamatJemput,
-          selectedSeat: this.selectedSeat, // Mengirim selectedSeat ke data penumpang
+          selectedSeat: this.selectedSeat, // Sending selectedSeat to passenger data
         });
       } else {
         if (!this.passenger.name || !this.passenger.number_phone) {
@@ -316,7 +311,7 @@ export default {
           name: this.passenger.name,
           number_phone: this.passenger.number_phone,
           alamatJemput: this.schedule[0].derpature,
-          selectedSeat: this.selectedSeat, // Mengirim selectedSeat ke data penumpang
+          selectedSeat: this.selectedSeat, // Sending selectedSeat to passenger data
         });
       }
       this.$router.push("/pembayaran");
@@ -324,4 +319,3 @@ export default {
   },
 };
 </script>
-

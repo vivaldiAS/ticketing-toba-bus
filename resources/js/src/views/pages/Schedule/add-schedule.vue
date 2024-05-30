@@ -181,48 +181,49 @@ export default {
       }
     },
     AddSchedule() {
-      const access_token = localStorage.getItem("access_token");
-      axios
-        .post(
-          "api/schedule/add",
-          {
-            bus_id: this.schedule.bus_id,
-            route_id: this.schedule.route_id,
-            tanggal: this.schedule.tanggal,
-            harga: this.schedule.harga,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${access_token}`,
-            },
-          }
-        )
-        .then((response) => {
-          this.message = response.data.message;
+  const access_token = localStorage.getItem("access_token");
+  axios
+    .post(
+      "/api/schedule/add",  // Ensure correct URL with leading slash
+      {
+        bus_id: this.schedule.bus_id,
+        route_id: this.schedule.route_id,
+        tanggal: this.schedule.tanggal,
+        harga: this.schedule.harga,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      }
+    )
+    .then((response) => {
+      this.message = response.data.message;
 
-          console.log(this.schedule);
-          Swal.fire({
-            icon: "success",
-            title: "Berhasil",
-            text: this.message,
-          });
-          this.$router.push({
-            name: "pages-supir",
-            query: { message: this.message },
-          });
-          this.$router.push({
-            name: "pages-schedule",
-            // query: { message: this.message },
-          });
-        })
-        .catch((error) => {
-          if (error.response.status === 422) {
-            this.errors = error.response.data.data;
-            this.errors_general = error.response.data.message;
-            console.log(this.errors);
-          }
+      Swal.fire({
+        icon: "success",
+        title: "Berhasil",
+        text: this.message,
+      });
+      this.$router.push({
+        name: "pages-schedule",
+      });
+    })
+    .catch((error) => {
+      if (error.response && error.response.status === 422) {
+        this.errors = error.response.data.data;
+        this.errors_general = error.response.data.message;
+      } else {
+        console.error('An error occurred:', error.message);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'An unexpected error occurred. Please try again later.',
         });
-    },
+      }
+    });
+}
+
   },
 };
 </script>

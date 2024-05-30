@@ -149,7 +149,6 @@ class RegisterUserController extends BaseController
     {
         $validator = Validator::make($request->all(), [
             'merk' => 'required|string|max:20|unique:brands',
-            'gambar_qris' => 'required|string',
             'admin_id' => 'required|string|exists:users,id',
         ], [
             'required' => ':attribute tidak boleh kosong!',

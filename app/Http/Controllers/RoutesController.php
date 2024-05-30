@@ -10,28 +10,87 @@ use App\Models\Routes;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
+
 class RoutesController extends BaseController
 {
-    public function index()
+    public function getAllRoutes()
     {
         try {
-            // Mendapatkan ID admin yang sedang login
-            $adminId = auth()->user()->id;
+            // Mengambil seluruh data dari tabel routes
+            $routes = DB::table('routes')->get();
+
+            // Mengembalikan data dalam format JSON
+            $data = ["data" => $routes->toArray()];
+            return response()->json($data);
+        } catch (\Exception $e) {
+            // Menampilkan pesan kesalahan eksepsi
+            dd($e->getMessage());
+
+            // Jika terjadi kesalahan, kembalikan respons dengan pesan kesalahan yang spesifik
+            return response()->json(['error' => 'Error retrieving routes.'], 500);
+        }
+    }
+    public function showRoutesByAdminId()
+    {
+        try {
+            // Pastikan pengguna telah terautentikasi
+            if (Auth::check()) {
+                // Dapatkan ID admin yang sedang login
+                $adminId = Auth::id();
     
-            // Mengambil data rute berdasarkan admin yang sedang login
-            $routes = Routes::select('routes.id', 'routes.derpature', 'routes.arrival', 'routes.harga', 'routes.type', 'routes.harga', 'routes.status')
+                // Menampilkan rute berdasarkan admin yang sedang login
+                $routes = DB::table('routes')
+                            ->select('routes.id', 'routes.derpature', 'routes.arrival', 'routes.harga', 'routes.type', 'routes.status')
                             ->join('brands', 'routes.brand_id', '=', 'brands.id')
                             ->where('brands.admin_id', $adminId)
                             ->get();
     
-            // Mengembalikan data sebagai respons
-            return $this->sendResponse($routes, 'Routes Retrieved Successfully');
+                // Membungkus data dalam array dengan kunci "data"
+                $data = ["data" => $routes];
+    
+                // Mengembalikan data rute
+                return response()->json($data);
+            } else {
+                // Pengguna belum terautentikasi, mungkin perlu diarahkan ke halaman login
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
         } catch (\Exception $e) {
-            // Jika terjadi kesalahan, kembalikan respons dengan pesan kesalahan
-            return $this->sendError('Error retrieving routes.', [], 404);
+            // Jika terjadi kesalahan, kembalikan respons dengan pesan kesalahan yang spesifik
+            return response()->json(['message' => 'Error retrieving routes.', 'error' => $e->getMessage()], 500);
         }
     }
     
+    public function index()
+    {
+        try {
+            // Mendapatkan ID admin yang sedang login
+            $adminId = Auth::user()->id;
+    
+            // Mengambil data rute berdasarkan admin yang sedang login
+            $routes = DB::table('routes')
+                        ->join('brands', 'routes.brand_id', '=', 'brands.id')
+                        ->where('brands.admin_id', $adminId)
+                        ->select('routes.id', 'routes.departure', 'routes.arrival', 'routes.harga', 'routes.type', 'routes.status')
+                        ->get();
+    
+            // Memeriksa apakah ada rute yang ditemukan
+            if ($routes->isEmpty()) {
+                return $this->sendError('No routes found for this admin.', [], 404);
+            }
+    
+            // Mengembalikan data sebagai respons
+            $data = ["data" => $routes->toArray()];
+            return response()->json($data);
+    
+        } catch (\Exception $e) {
+            // Menampilkan pesan kesalahan eksepsi
+            dd($e->getMessage());
+    
+            // Jika terjadi kesalahan, kembalikan respons dengan pesan kesalahan yang spesifik
+            return $this->sendError('Error retrieving routes.', [], 500);
+        }
+    }
+
     public function store(Request $request)
     {
         // Mengambil ID admin yang sedang login
@@ -111,8 +170,7 @@ class RoutesController extends BaseController
         $routes->delete();
         return $this->sendResponse($routes, 'Routes Deleted Successfully');
     }
-
-        public function UpdateStatusRoute($id)
+public function UpdateStatusRoute($id)
         {
             $routes = Routes::find($id);
 
@@ -122,5 +180,6 @@ class RoutesController extends BaseController
             $routes->status = ($routes->status == 1) ? 0 : 1;
             $routes->save();
             return response()->json(['data' => $routes, 'message' => 'Status Bus Updated Successfully']);
-        }
+    }
+
 }

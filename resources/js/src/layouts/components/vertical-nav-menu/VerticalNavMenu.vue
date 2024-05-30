@@ -12,10 +12,11 @@
     <div
       class="vertical-nav-header d-flex items-center ps-6 pe-5 pt-5 pb-2"
       color="primary"
+      style="display: flex; justify-content: center; " 
     >
       <router-link to="/dashboard" class="d-flex align-center text-decoration-none">
         <v-img
-          :src="require('@/assets/images/logos/logo-KBT.png').default"
+          :src="require('@/assets/images/logo/logo-no-background-putih.png').default"
           max-height="50px"
           max-width="100px"
           alt="logo"
@@ -24,9 +25,6 @@
           class="app-logo me-auto"
           color="secondary"
         ></v-img>
-        <!-- <v-slide-x-transition>
-          <h2 class="app-title text--primary">E-KBT</h2>
-        </v-slide-x-transition> -->
       </router-link>
     </div>
 
@@ -37,12 +35,19 @@
         :to="{ name: 'dashboard' }"
         :icon="icons.mdiHomeOutline"
       ></nav-menu-link>
-      <div v-if="userRole == 'admin_loket'">
+      <div v-if="userRole === 'admin_loket'">
         <nav-menu-link
           title="Pesan Ticket "
           :to="{ name: 'pages-pemesanan' }"
           :icon="icons.mdiCreditCardOutline"
         ></nav-menu-link>
+        
+        <nav-menu-link
+          title="Konfirmasi Pesanan"
+          :to="{ name: 'konfirmasi-booking-tunai' }"
+          :icon="icons.mdiCheckCircle"
+        ></nav-menu-link>
+
         <nav-menu-link
           title="Riwayat Pesanan"
           :to="{ name: 'pesananku' }"
@@ -59,14 +64,12 @@
           :icon="icons.mdiCurrencyUsd"
         ></nav-menu-link>
       </div>
-      <div v-if="userRole == 'admin_kantor'">
-        <!-- <nav-menu-link title="Account Settings" :to="{ name: 'pages-account-settings' }"
-        :icon="icons.mdiAccountCogOutline"></nav-menu-link> -->
+      <div v-if="userRole === 'admin_kantor'">
         <nav-menu-group title="Loket" :icon="icons.mdiCarCog">
           <nav-menu-link
             title="Admin Loket"
             :to="{ name: 'pages-admin-loket' }"
-            :icon="icons.mdiCardAccountDetailsOutline"
+            :icon="icons.mdiAccountTie"
           ></nav-menu-link>
           <nav-menu-link
             title="Loket"
@@ -96,6 +99,12 @@
         ></nav-menu-link>
 
         <nav-menu-link
+            title="Jadwal Default"
+            :to="{ name: 'pages-default-schedule' }"
+            :icon="icons.mdiCalendarWeek"
+        ></nav-menu-link>
+
+        <nav-menu-link
           title="Catatan Keuangan"
           :to="{ name: 'catatan-keuangan' }"
           :icon="icons.mdiCashCheck"
@@ -106,7 +115,7 @@
           :icon="icons.mdiCurrencyUsd"
         ></nav-menu-link>
       </div>
-      <div v-if="userRole == 'passenger'">
+      <div v-if="userRole === 'passenger'">
         <nav-menu-link
           title="Pesan E-ticket"
           :to="{ name: 'all-bus' }"
@@ -123,7 +132,7 @@
           :icon="icons.mdiHistory"
         ></nav-menu-link>
       </div>
-      <div v-if="userRole == 'driver'">
+      <div v-if="userRole === 'driver'">
         <nav-menu-link
           title="Penumpang"
           :to="{ name: 'penumpang' }"
@@ -135,9 +144,18 @@
           :icon="icons.mdiHistory"
         ></nav-menu-link>
       </div>
-
-      <div v-if="userRole == 'direksi'">
+      <div v-if="userRole === 'direksi'">
         <nav-menu-link
+          title="Admin Kantor"
+          :to="{ name: 'list-admin-kantor' }"
+          :icon="icons.mdiDesk"
+        ></nav-menu-link>
+        <nav-menu-link
+          title="Merk"
+          :to="{ name: 'list-brands' }"
+          :icon="icons.mdiTag"
+        ></nav-menu-link>
+        <!-- <nav-menu-link
           title="Catatan Keuangan"
           :to="{ name: 'catatan-keuangan' }"
           :icon="icons.mdiCashCheck"
@@ -146,40 +164,38 @@
           title="Komisi"
           :to="{ name: 'komisi' }"
           :icon="icons.mdiCurrencyUsd"
+        ></nav-menu-link> -->
+      </div>
+      <div v-if="!userRole">
+        <!-- Default Menu for unknown role -->
+        <nav-menu-link
+          title="Pesan E-ticket"
+          :to="{ name: 'all-bus' }"
+          :icon="icons.mdiCardAccountDetailsOutline"
+        ></nav-menu-link>
+        <nav-menu-link
+          title="Pesananku"
+          :to="{ name: 'pesananku' }"
+          :icon="icons.mdiCar"
+        ></nav-menu-link>
+        <nav-menu-link
+          title="Riwayat Perjalanan"
+          :to="{ name: 'riwayat-perjalanan' }"
+          :icon="icons.mdiHistory"
         ></nav-menu-link>
       </div>
-
-      <!-- <nav-menu-group title="Pages" :icon="icons.mdiFileOutline">
-        <nav-menu-link title="Login" :to="{ name: 'pages-login' }" ></nav-menu-link>
-        <nav-menu-link title="Register" :to="{ name: 'pages-register' }" ></nav-menu-link>
-        <nav-menu-link title="Error" :to="{ name: 'error-404' }"></nav-menu-link>
-      </nav-menu-group> -->
-
-      <!-- <nav-menu-link title="Account Settings" :to="{ name: 'pages-account-settings' }"
-        :icon="icons.mdiAccountCogOutline"></nav-menu-link> -->
-
-      <!-- <nav-menu-section-title title="USER INTERFACE"></nav-menu-section-title>
-      <nav-menu-link title="Typography" :to="{ name: 'typography' }" :icon="icons.mdiAlphaTBoxOutline"></nav-menu-link>
-      <nav-menu-link title="Icons" :to="{ name: 'icons' }" :icon="icons.mdiEyeOutline"></nav-menu-link>
-      <nav-menu-link title="Cards" :to="{ name: 'cards' }" :icon="icons.mdiCreditCardOutline"></nav-menu-link>
-      <nav-menu-link title="Tables" :to="{ name: 'simple-table' }" :icon="icons.mdiTable"></nav-menu-link>
-      <nav-menu-link title="Form Layouts" :to="{ name: 'form-layouts' }" :icon="icons.mdiFormSelect"></nav-menu-link> -->
     </v-list>
-    <!-- <v-list expand shaped class="vertical-nav-menu-items pr-5"  text-color="white">
-      <nav-menu-link title="Beranda" :to="{ name: 'dashboard-penumpang' }" :icon="icons.mdiHomeOutline"></nav-menu-link>
-
-
-    </v-list> -->
   </v-navigation-drawer>
 </template>
 
 <script>
-// eslint-disable-next-line object-curly-newline
 import {
+  mdiAccountTie,
   mdiHomeOutline,
   mdiAlphaTBoxOutline,
   mdiEyeOutline,
   mdiCreditCardOutline,
+  mdiCheckCircle,
   mdiTable,
   mdiFileOutline,
   mdiFormSelect,
@@ -190,7 +206,10 @@ import {
   mdiMapMarkerDistance,
   mdiHistory,
   mdiCurrencyUsd,
-  mdiCashCheck
+  mdiCashCheck,
+  mdiDesk,
+  mdiTag,
+  mdiCalendarWeek
 } from "@mdi/js";
 import NavMenuSectionTitle from "./components/NavMenuSectionTitle.vue";
 import NavMenuGroup from "./components/NavMenuGroup.vue";
@@ -212,9 +231,11 @@ export default {
     return {
       icons: {
         mdiHomeOutline,
+        mdiAccountTie,
         mdiAlphaTBoxOutline,
         mdiEyeOutline,
         mdiCreditCardOutline,
+        mdiCheckCircle,
         mdiTable,
         mdiFileOutline,
         mdiFormSelect,
@@ -225,8 +246,10 @@ export default {
         mdiCarCog,
         mdiHistory,
         mdiCurrencyUsd,
-        mdiCashCheck
-        // mdiCarClock
+        mdiCashCheck,
+        mdiDesk,
+        mdiTag,
+        mdiCalendarWeek
       },
     };
   },
@@ -250,7 +273,6 @@ export default {
   letter-spacing: 0.3px;
 }
 
-// ? Adjust this `translateX` value to keep logo in center when vertical nav menu is collapsed (Value depends on your logo)
 .app-logo {
   transition: all 0.18s ease-in-out;
 
@@ -277,8 +299,6 @@ export default {
   }
 }
 
-// You can remove below style
-// Upgrade Banner
 .app-navigation-menu {
   .upgrade-banner {
     position: absolute;

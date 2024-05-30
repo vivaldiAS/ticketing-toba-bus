@@ -110,14 +110,14 @@ export default {
     const access_token = localStorage.getItem("access_token");
 
     axios
-      .get("/api/bookings/my", {
+      .get("/api/riwayat/my", {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },
       })
       .then((response) => {
         this.pesanan = response.data.filter(
-          (pesanan) => pesanan.status === "complete" && pesanan.status_pay === "Berhasil"
+          (pesanan) => pesanan.jadwalstatus === "complete" && pesanan.status_pay === "Berhasil"
         );
         console.log(this.pesanan);
       })

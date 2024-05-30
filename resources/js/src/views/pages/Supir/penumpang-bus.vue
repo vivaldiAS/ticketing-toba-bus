@@ -5,7 +5,7 @@
       <div>
         <h5>Status bus:</h5>
         <v-btn
-          v-if="bus.status == 'in_progress'"
+          v-if="bus.schedule_status === 'in_progress'"
           rounded
           small
           color="warning"
@@ -16,7 +16,7 @@
           Sedang berjalan
         </v-btn>
         <v-btn
-          v-if="bus.status == 'complete'"
+          v-if="bus.schedule_status === 'complete'"
           rounded
           small
           color="primary"
@@ -27,10 +27,10 @@
           Perjalanan Selesai
         </v-btn>
         <v-btn
-          v-if="bus.status == 'not_started'"
+          v-if="bus.schedule_status === 'not_started'"
           rounded
           small
-          color="presecondary"
+          color="secondary"
           class="my-2 status text-capitalize"
           style="color: white; font-weight: bold"
           @click="updateBusStatus(bus.schedules_id)"
@@ -47,7 +47,7 @@
     <v-data-table
       :headers="headers"
       :items="penumpang"
-      item-key="name"
+      item-key="id"
       class="elevation-1"
     >
     </v-data-table>
@@ -65,7 +65,7 @@ export default {
     return {
       headers: [
         { text: "Nama", value: "name" },
-        { text: "Bangku", value: "num_seats" },
+        { text: "Bangku", value: "seat_numbers" },
         { text: "No Handphone", value: "number_phone" },
         { text: "Penjemputan", value: "alamatJemput" },
         { text: "Metode", value: "method" },
@@ -91,14 +91,16 @@ export default {
   methods: {
     formatDate(date) {
       moment.locale("id");
-      return moment(date).format("dddd, Do MMMM YYYY, hh:mm:ss");
+      return moment(date).format("dddd, Do MMMM YYYY, HH:mm:ss");
+    },
+
+    calculateTotalPenumpang() {
+      this.total_penumpang = this.penumpang.reduce((total, item) => {
+        return total + item.seat_numbers.length;
+      }, 0);
     },
 
     sentDataToSocket() {
-      // Only sent the location if bus in progress action
-      // Format action must mapping
-      // {id_bus}-{Scheduler}
-      console.log(this.StatusBus);
       if (this.StatusBus === "in_progress" && this.watcher === null) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -134,7 +136,6 @@ export default {
         });
         console.log(this.bus);
 
-        // if (this.StatusBus === 'in_progress') {
         this.watcher = navigator.geolocation.watchPosition(
           (position) => {
             console.log(
@@ -157,13 +158,14 @@ export default {
             console.log(`Failed to watch location ${err}`);
           }
         );
-      } else if (this.StatusBus == "complete") {
+      } else if (this.StatusBus === "complete") {
         if (this.watcher !== null) {
           console.log(`unmounted the watcher`);
           navigator.geolocation.clearWatch(this.watcher);
         }
       }
     },
+
     async updateBusStatus(schedule_id) {
       const access_token = localStorage.getItem("access_token");
       if (this.StatusBus !== "complete" || true) {
@@ -178,8 +180,7 @@ export default {
             }
           );
           console.log(response.data);
-          // update status bus pada halaman
-          this.bus.status = response.data.data.status;
+          this.bus.schedule_status = response.data.data.status;
           this.StatusBus = response.data.data.status;
 
           this.sentDataToSocket();
@@ -202,8 +203,9 @@ export default {
         this.penumpang = response.data.data;
         console.log(this.penumpang);
         this.bus = response.data.data[0];
-        this.StatusBus = response.data.data[0].status;
-        this.total_penumpang = response.data.total;
+        this.StatusBus = response.data.data[0].schedule_status;
+        this.calculateTotalPenumpang();
+        console.log(this.bus); // Tambahkan ini untuk memeriksa data bus
         axios
           .get(`/api/user/profile`, {
             headers: {
@@ -219,6 +221,7 @@ export default {
         console.log(error);
       });
   },
+
   created() {
     // }
   },
@@ -227,6 +230,6 @@ export default {
       console.log(`unmounted the watcher`);
       navigator.geolocation.clearWatch(this.watcher);
     }
-  },
+  }, 
 };
 </script>

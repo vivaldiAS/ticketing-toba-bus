@@ -30,11 +30,11 @@
                   :class="[
                     'pa- text-center text-no-wrap rounded',
                     {
-                      style: isSelectedChair(n),
-                      booked: isBookedChair(n),
+                      'style': isSelectedChair(n),
+                      'booked': isBookedChair(n),
                     },
                   ]"
-                  @click="toggleChairSelection(n)"
+                  @click="!isBookedChair(n) && toggleChairSelection(n)"
                 >
                   <v-icon x-large>{{ isSelectedChair(n) ? icons.mdiSofaSingle : icons.mdiSofaSingleOutline }}</v-icon>
                   <h4>{{ n }}</h4>
@@ -59,11 +59,11 @@
                   :class="[
                     'pa- text-center text-no-wrap rounded',
                     {
-                      style: isSelectedChair(n),
-                      booked: isBookedChair(n),
+                      'style': isSelectedChair(n),
+                      'booked': isBookedChair(n),
                     },
                   ]"
-                  @click="toggleChairSelection(n)"
+                  @click="!isBookedChair(n) && toggleChairSelection(n)"
                 >
                   <v-icon x-large>{{ isSelectedChair(n) ? icons.mdiSofaSingle : icons.mdiSofaSingleOutline }}</v-icon>
                   <h4>{{ getDisplayedSeatNumber(n) }}</h4>
@@ -77,7 +77,6 @@
           <v-container class="grey text-center">
             <v-card class="mb-3">
               <v-row>
-                <!-- Bagian 1: Seat Dipilih -->
                 <v-col cols="4" md="4" sm="4">
                   <div class="pa-2" tile>
                     <h3>Seat Dipilih</h3>
@@ -85,7 +84,6 @@
                   </div>
                 </v-col>
 
-                <!-- Bagian 2: Tombol -->
                 <v-col cols="4" md="4" sm="4">
                   <div class="pa-2">
                     <v-btn
@@ -100,7 +98,6 @@
                   </div>
                 </v-col>
 
-                <!-- Bagian 3: Total Harga -->
                 <v-col cols="4" md="4" sm="4">
                   <div class="pa-2" tile>
                     <h3>Total Harga</h3>
@@ -124,14 +121,8 @@
 
 <script>
 import axios from "axios";
-import moment from "moment";
-import "moment/locale/id";
 import { mapState, mapActions } from "vuex";
-
 import {
-  mdiCalendarClock,
-  mdiAccountGroup,
-  mdiAccount,
   mdiSofaSingleOutline,
   mdiSofaSingle,
   mdiChevronRight,
@@ -142,9 +133,6 @@ export default {
   setup() {
     return {
       icons: {
-        mdiCalendarClock,
-        mdiAccountGroup,
-        mdiAccount,
         mdiSofaSingleOutline,
         mdiSofaSingle,
         mdiChevronRight,
@@ -155,7 +143,7 @@ export default {
 
   data() {
     return {
-      schedule: {},
+      schedule: [],
       selectedSeat: [],
       bookingsChair: [],
       snackbar: {
@@ -168,22 +156,20 @@ export default {
   },
   computed: {
     ...mapState(["busData"]),
-    ...mapState(["selectedSeat"]),
     id_schedule() {
-      return this.$store.state.busData.id_schedule;
+      return this.busData.id_schedule;
     },
     harga() {
-      return this.$store.state.busData.harga;
+      return this.busData.harga;
     },
     totalHarga() {
       return this.harga * this.selectedSeat.length;
-    }
+    },
   },
-
 
   mounted() {
     this.getSchedule();
-    this.getbookingsChair();
+    this.getBookingsChair();
   },
 
   filters: {
@@ -213,16 +199,15 @@ export default {
         return 3;
       }
     },
+
     submitData() {
-  if (!isNaN(this.totalHarga) && this.totalHarga !== null) {
-    console.log('nilai selectedSeat pada halaman custom-pesanan.vue:', this.selectedSeat); 
-    // this.$store.commit('SET_SELECTED_SEATS', this.selectedSeat.slice());
-    this.$store.dispatch('setSelectedSeat', this.selectedSeat.slice()); // Panggil action Vuex di sini
-    this.proceedToConfirmation();
-  } else {
-    console.error('Total harga kursi tidak valid');
-  }
-},
+      if (!isNaN(this.totalHarga) && this.totalHarga !== null) {
+        this.$store.dispatch('setSelectedSeat', this.selectedSeat.slice());
+        this.proceedToConfirmation();
+      } else {
+        console.error('Total harga kursi tidak valid');
+      }
+    },
 
     getDisplayedSeatNumber(n) {
       return n;
@@ -241,19 +226,19 @@ export default {
     },
 
     isBookedChair(seat) {
-      return this.bookingsChair.some((chair) => chair.num_seats === seat);
+      return this.bookingsChair.includes(seat);
     },
 
     proceedToConfirmation() {
-    if (this.selectedSeat.length > 0) {
-      this.$router.push("/confirmasi-pemesanan");
-    } else {
-      this.snackbar.message = "Pilih setidaknya satu kursi";
-      this.snackbar.show = true;
-    }
-  },
+      if (this.selectedSeat.length > 0) {
+        this.$router.push("/confirmasi-pemesanan");
+      } else {
+        this.snackbar.message = "Pilih setidaknya satu kursi";
+        this.snackbar.show = true;
+      }
+    },
 
-    getbookingsChair() {
+    getBookingsChair() {
       const access_token = localStorage.getItem("access_token");
       axios
         .get(`/api/bookings/show/schedules/${this.id_schedule}`, {
@@ -262,21 +247,17 @@ export default {
           },
         })
         .then((response) => {
-          this.bookingsChair = response.data.data.map((item) => {
-            return {
-              num_seats: item.num_seats,
-            };
-          });
+          this.bookingsChair = response.data.data.flatMap(item => item.seat_numbers);
         })
         .catch((error) => {
-          console.log(error);
+          console.error(error);
         });
     },
+
     getSchedule() {
       const access_token = localStorage.getItem("access_token");
-      let uri = `/api/schedule/show/${this.id_schedule}`;
       axios
-        .get(uri, {
+        .get(`/api/schedule/show/${this.id_schedule}`, {
           headers: {
             Authorization: `Bearer ${access_token}`,
           },
@@ -285,9 +266,10 @@ export default {
           this.schedule = response.data.data;
         })
         .catch((error) => {
-          console.log(error);
+          console.error(error);
         });
     },
+
     closeSnackbar() {
       this.snackbar.show = false;
     },

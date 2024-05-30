@@ -7,11 +7,7 @@
           <h2>{{ item.derpature }} -> {{ item.arrival }}</h2>
           <h5>{{ formatHour(item.tanggal) }}</h5>
           <h5>{{ formatDate(item.tanggal) }}</h5>
-<<<<<<< HEAD
           <h5>{{ item.harga * selectedSeat.length | toRupiah }}</h5>
-=======
-          <h5>{{ item.harga* selectedSeat.length | toRupiah }}</h5>
->>>>>>> b60571efd7e7f968ac5170fdbdc5e9dee257317f
         </div>
         <template class="text-center">
           <v-container class="grey lighten-5">
@@ -159,6 +155,7 @@ import { mdiChevronRight, mdiCreditCard, mdiCashCheck, mdiWalletOutline } from "
 export default {
   data() {
     return {
+      user: {},
       showPaymentMethods: false,
       showPaymentcash: false,
       showPaymentNoncash: false,
@@ -175,16 +172,9 @@ export default {
         mdiWalletOutline,
       },
 
-      bookings: [
-        "schedules_id",
-        "name",
-        "number_phone ",
-        "num_seats",
-        "alamat_jemput",
-        "status",
-        "harga",
-        "email"
-      ],
+      bookings: {
+        email: ''
+      },
     };
   },
   computed: {
@@ -204,6 +194,16 @@ export default {
   },
   mounted() {
     this.getSchedule();
+    const access_token = localStorage.getItem('access_token');
+  axios.get('api/user/profile', {
+    headers: {
+      'Authorization': `Bearer ${access_token}`
+    }
+  }).then(response => {
+    this.user = response.data;
+  }).catch(error => {
+    console.log(error);
+  })
   },
   filters: {
     toRupiah(value) {
@@ -217,11 +217,72 @@ export default {
   },
   methods: {
     redirectToLoketPayment() {
-      this.$router.push({
-        name: "loket-payment",
-        params: { id_schedule: this.id_schedule }
-      });
-    },
+    const access_token = localStorage.getItem("access_token");
+    const email = this.user.email;
+    const user = this.$store.state.user;
+    const schedulesId = this.id_schedule;
+    const name = this.passengerData.name;
+    const number_phone = this.passengerData.number_phone;
+    const alamatJemput = this.passengerData.alamatJemput;
+    const num_seats = this.selectedSeat;
+    const userId = this.user.id;
+
+    if (!userId) {
+        console.error("User data is missing or user is not logged in");
+        Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "User data is missing or user is not logged in",
+        });
+        return;
+    }
+
+    const postData = {
+        user_id: userId,
+        schedules_id: schedulesId,
+        name: name,
+        number_phone: number_phone,
+        num_seats: num_seats,
+        alamatJemput: alamatJemput,
+        harga: this.harga * num_seats.length,
+        status: 0,
+        email: email
+    };
+
+    // Logging the data to be sent
+    console.log("Data to be sent:", postData);
+
+    axios
+        .post(
+            "api/bookings/bayartunai",
+            postData,
+            {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                },
+            }
+        )
+        .then((response) => {
+          const bookingId = response.data.data.booking_id;
+            // Simpan informasi pemesanan ke dalam local storage
+            localStorage.setItem("bookingData", JSON.stringify(response.data.data));
+
+            // Pengalihan ke halaman loket pembayaran
+            this.$router.push({
+              name: "loket-payment",
+              params: { bookingId: bookingId } // Gunakan nomor booking sebagai parameter
+          });
+        })
+        .catch((error) => {
+            console.error("Error posting data:", error);
+            Swal.fire({
+                icon: "error",
+                title: "Oops...",
+                text: "Terjadi kesalahan saat melakukan pembayaran",
+            });
+        });
+},
+
     formatDate(date) {
       moment.locale("id");
       return moment(date).format("dddd, Do MMMM YYYY");
@@ -250,6 +311,8 @@ export default {
         .then((response) => {
           this.schedule = response.data.data;
           console.log(this.schedule);
+          //console.log('selingkuh ho', this.selectedSeat);
+
         })
         .catch((error) => {
           console.log(error);
@@ -268,7 +331,7 @@ export default {
             num_seats: this.selectedSeat,
             alamatJemput: this.passengerData.alamatJemput,
             harga: this.harga,
-            status: "berhasil",
+            status: "complete",
             email: email
           },
           {
@@ -345,15 +408,8 @@ export default {
               });
             }, 1000);
 
-<<<<<<< HEAD
             if (data.code === 200 && data.data.virtual_account_info.how_to_pay_api) {
               const howToPayApi = data.data.virtual_account_info.how_to_pay_api;
-=======
-            console.log(data);
-            if (data.code === 200 && data.data.virtual_account_info.how_to_pay_api) {
-              const howToPayApi = data.data.virtual_account_info.how_to_pay_api;
-              console.log(howToPayApi)
->>>>>>> b60571efd7e7f968ac5170fdbdc5e9dee257317f
               this.$router.push({
                 name: 'pembayaran-instruction-bca',
                 params: { howToPayApi: howToPayApi }
