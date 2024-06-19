@@ -45,6 +45,7 @@
           <v-col offset-md="3" cols="12">
             <v-btn @click.prevent="AddSchedule" color="primary"> Submit </v-btn>
             <v-btn type="reset" class="mx-2" outlined> Reset </v-btn>
+            <v-btn v-if="schedule.jadwal_status === 'not_started'" @click.prevent="CancelSchedule" color="error" outlined> Hapus </v-btn>
           </v-col>
         </v-row>
       </v-form>
@@ -63,6 +64,7 @@ export default {
       route_id: "",
       tanggal: "",
       harga: "",
+      jadwal_status: "",  // Adding jadwal_status to the reactive object
     });
     const bus = ref([]);
     const route = ref([]);
@@ -179,6 +181,26 @@ export default {
           console.log(error.response.data.errors);
         });
     },
-  },
+    CancelSchedule() {
+      const access_token = localStorage.getItem("access_token");
+      axios
+        .delete(`/api/deleteSchedule/${this.schedule.schedule_id}`, {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        })
+        .then((response) => {
+          console.log(response.data.message); // Log the response
+          this.$router.push({
+            name: "pages-schedule",
+            query: { message: "Schedule deleted successfully" },
+          });
+        })
+        .catch((error) => {
+          console.log(error.response.data.message); // Log any error messages
+        });
+    },
+}
+
 };
 </script>

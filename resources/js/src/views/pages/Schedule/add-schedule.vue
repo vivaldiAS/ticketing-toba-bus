@@ -50,6 +50,8 @@
               dense
               placeholder="Tanggal"
               :error-messages="errors.tanggal"
+              :rules="[validateDate]"
+              :min="now"
             ></v-text-field>
           </v-col>
 
@@ -109,6 +111,7 @@ export default {
       route: [],
       selectedBusType: null,
       selectedBusPrice: null,
+      now: new Date().toISOString().slice(0, 16), // Current date and time in "yyyy-MM-ddTHH:mm" format
     };
   },
   mounted() {
@@ -180,50 +183,55 @@ export default {
         this.schedule.harga = selectedRoute.harga;
       }
     },
+    validateDate(value) {
+      if (value < this.now) {
+        return 'Tanggal dan waktu tidak boleh di masa lalu';
+      }
+      return true;
+    },
     AddSchedule() {
-  const access_token = localStorage.getItem("access_token");
-  axios
-    .post(
-      "/api/schedule/add",  // Ensure correct URL with leading slash
-      {
-        bus_id: this.schedule.bus_id,
-        route_id: this.schedule.route_id,
-        tanggal: this.schedule.tanggal,
-        harga: this.schedule.harga,
-      },
-      {
-        headers: {
-          Authorization: `Bearer ${access_token}`,
-        },
-      }
-    )
-    .then((response) => {
-      this.message = response.data.message;
+      const access_token = localStorage.getItem("access_token");
+      axios
+        .post(
+          "/api/schedule/add",  // Ensure correct URL with leading slash
+          {
+            bus_id: this.schedule.bus_id,
+            route_id: this.schedule.route_id,
+            tanggal: this.schedule.tanggal,
+            harga: this.schedule.harga,
+          },
+          {
+            headers: {
+              Authorization: `Bearer ${access_token}`,
+            },
+          }
+        )
+        .then((response) => {
+          this.message = response.data.message;
 
-      Swal.fire({
-        icon: "success",
-        title: "Berhasil",
-        text: this.message,
-      });
-      this.$router.push({
-        name: "pages-schedule",
-      });
-    })
-    .catch((error) => {
-      if (error.response && error.response.status === 422) {
-        this.errors = error.response.data.data;
-        this.errors_general = error.response.data.message;
-      } else {
-        console.error('An error occurred:', error.message);
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'An unexpected error occurred. Please try again later.',
+          Swal.fire({
+            icon: "success",
+            title: "Berhasil",
+            text: this.message,
+          });
+          this.$router.push({
+            name: "pages-schedule",
+          });
+        })
+        .catch((error) => {
+          if (error.response && error.response.status === 422) {
+            this.errors = error.response.data.data;
+            this.errors_general = error.response.data.message;
+          } else {
+            console.error('An error occurred:', error.message);
+            Swal.fire({
+              icon: 'error',
+              title: 'Error',
+              text: 'An unexpected error occurred. Please try again later.',
+            });
+          }
         });
-      }
-    });
-}
-
+    }
   },
 };
 </script>

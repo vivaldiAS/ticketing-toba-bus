@@ -75,8 +75,7 @@ export default {
   },
   methods: {
     formatDate(date) {
-      // moment.locale('id');
-      return moment(date).format("dddd, Do MMMM YYYY");
+      return moment(date).format("dddd, DD MMMM YYYY, HH:mm:ss");
     },
     getColor(status) {
       if (status == "not_started") return "red";
@@ -105,10 +104,10 @@ export default {
           return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
         }
 
-        const schedules = response.data.data;
+        let schedules = response.data.data;
 
         schedules.forEach((schedule) => {
-          // current dat
+          // current date
           const currentDate = new Date();
           // add 1 day
           const scheduleDate = new Date(schedule.tanggal);
@@ -119,7 +118,7 @@ export default {
           const scheduledateUpObj = new Date(scheduledateUp);
 
           if (scheduledateUpObj < currentDate) {
-            schedule.status = "complete"
+            schedule.status = "complete";
             axios
               .put(
                 `/api/status/update/auto/${schedule.schedule_id}`,
@@ -132,14 +131,17 @@ export default {
                   },
                 }
               )
-              .then((response) => {
-                console.log(`Schedule with id=${schedule.schedule_id} marked as complete`);
-              })
               .catch((error) => {
                 console.log("Error updating schedule status:", error);
               });
           }
+
+          // Format date
+          schedule.tanggal = this.formatDate(schedule.tanggal);
         });
+
+        // Sort schedules by date
+        schedules.sort((a, b) => new Date(a.tanggal) - new Date(b.tanggal));
 
         // Now, the schedules array will have the "status" property updated for each schedule
         this.schedule = schedules;

@@ -202,12 +202,6 @@ export default {
       const minutes = durationMoment.minutes();
       const seconds = durationMoment.seconds();
 
-      // Cetak nilai-nilai untuk memeriksa apakah mereka valid
-      console.log("Hours:", hours);
-      console.log("Minutes:", minutes);
-      console.log("Seconds:", seconds);
-
-      // Pastikan nilai jam, menit, dan detik valid sebelum dipasangkan dengan string
       if (!isNaN(hours) && !isNaN(minutes) && !isNaN(seconds)) {
         this.hours = String(hours).padStart(2, "0");
         this.minutes = String(minutes).padStart(2, "0");

@@ -17,7 +17,7 @@ class AdminLoketController extends BaseController
             return response()->json(['message' => 'Unauthenticated.'], 401);
         }
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:20',
+            'name' => 'required|string|max:40',
             'email' => 'required|string|unique:users',
             'phone_number' => 'required|string',
             'address' => 'required|string',
@@ -37,7 +37,7 @@ class AdminLoketController extends BaseController
             return $this->sendError('Input tidak boleh kosong', $validator->errors(), 422);
         }
         $input = $request->all();
-        $input['password'] = bcrypt($request->password);
+        $input['password'] = bcrypt('123456');
         $input['photo'] = "null";
         $input['role_id'] = '4';
         $input['status'] = '1';

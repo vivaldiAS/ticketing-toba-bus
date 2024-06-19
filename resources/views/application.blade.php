@@ -2,11 +2,12 @@
 
 <head>
   <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
 
-  <title>e-KBT </title>
+  <title>e-TransToba </title>
 
   <!-- Favicon -->
   {{-- <link rel="shortcut icon" href="{{ asset('favicon.ico') }}"> --}}
@@ -17,10 +18,10 @@
 
   <script src="{{ asset(mix('js/app.js')) }}" defer></script>
   {{-- <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_lX5Kf_oGH_rBt6gj-e4zH_-Xb90Qk7M"></script> --}}
-  <script
+  <!-- <script
       src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD_lX5Kf_oGH_rBt6gj-e4zH_-Xb90Qk7M&callback=initMap&v=weekly"
       defer
-    ></script>
+    ></script> -->
 </head>
 
 <body>

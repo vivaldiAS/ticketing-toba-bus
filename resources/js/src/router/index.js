@@ -247,11 +247,20 @@ const routes = [
       requiresRole: 'admin_kantor',
     },
   },
-
   {
     path: '/default-schedule',
     name: 'pages-default-schedule',
     component: () => import('@/views/pages/Schedule/default-schedule.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresRole: 'admin_kantor',
+    },
+  },
+
+  {
+    path: '/rud-default-schedule/:id',
+    name: 'rud-default-schedule',
+    component: () => import('@/views/pages/Schedule/rud-default-schedule.vue'),
     meta: {
       requiresAuth: true,
       requiresRole: 'admin_kantor',
@@ -363,6 +372,17 @@ const routes = [
     },
 },
 
+{
+  path: '/payment-mt/:bookingId', // Gunakan parameter bookingId
+  name: 'payment-mt',
+  component: () => import('@/views/pages/Pembayaran/lakukan-pembayaran-mt.vue'),
+  props: true,
+  meta: {
+      requiresAuth: true,
+      requiresRole: ['admin_loket', 'passenger'],
+  },
+},
+
   {
     path: '/all-bus',
     name: 'all-bus',
@@ -465,6 +485,16 @@ const routes = [
     },
   },
 
+  {
+    path: '/list-penumpang',
+    name: 'list-penumpang',
+    component: () => import('@/views/pages/Penumpang/list-penumpang.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresRole: ['direksi'],
+    },
+  },
+
 
   {
     path: '/detail-catatan-keuangan/:tanggal',
@@ -509,6 +539,15 @@ const routes = [
     meta: {
       requiresAuth: true,
       requiresRole: 'driver',
+    },
+  },
+  {
+    path: '/komisi-action',
+    name: 'komisi-action',
+    component: () => import('@/views/pages/Komisi/komisi-action.vue'),
+    meta: {
+      requiresAuth: true,
+      requiresRole: 'admin_kantor',
     },
   },
   {

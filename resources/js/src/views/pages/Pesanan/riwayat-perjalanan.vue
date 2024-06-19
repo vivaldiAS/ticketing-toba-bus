@@ -7,7 +7,7 @@
       <v-card v-if="pesanan.length === 0">
         <h3 class="text-center py-4">Maaf, anda belum memiliki riwayat perjalanan.</h3>
       </v-card>
-      <v-card v-else v-for="item in pesanan" :key="item.schedule_id" class="mb-2">
+      <v-card v-else v-for="item in pesanan" :key="item.bookings_id" class="mb-2">
         <v-row no-gutters>
           <v-col cols="auto">
             <v-avatar size="40" class="mt-2 ml-2">
@@ -119,7 +119,6 @@ export default {
         this.pesanan = response.data.filter(
           (pesanan) => pesanan.jadwalstatus === "complete" && pesanan.status_pay === "Berhasil"
         );
-        console.log(this.pesanan);
       })
       .catch((error) => {
         console.log(error);

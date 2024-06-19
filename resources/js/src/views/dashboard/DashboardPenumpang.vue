@@ -5,7 +5,7 @@
       <v-container>
         <v-img height="400px" :src="require('@/assets/images/logos/latarbelakang.jpg').default">
           <v-card-title>
-            <v-btn small color="primary" class="btn-pesan-ticket"> Pesan E-Ticket </v-btn>
+            <!-- <v-btn small color="primary" class="btn-pesan-ticket"> Pesan E-Ticket </v-btn> -->
           </v-card-title>
           <v-card-title class="text-title">
             <h5 class="white--text">Pelayanan terbaik untuk perjalananmu</h5>
@@ -60,14 +60,54 @@
           ></v-select>
         </v-col>
         <v-col>
-          <v-select
-            v-model="selectedType"
-            :items="['Ekonomi', 'Eksekutif']"
-            placeholder="Pilih Type"
-            clearable
-            hide-details
-          ></v-select>
+          <v-row align="center">
+            <v-col>
+              <v-select
+                v-model="selectedType"
+                :items="['Ekonomi', 'Eksekutif']"
+                placeholder="Pilih Type"
+                clearable
+                hide-details
+              ></v-select>
+            </v-col>
+            <v-col cols="auto">
+              <v-tooltip bottom>
+                <template v-slot:activator="{ on, attrs }">
+                  <v-icon
+                    v-bind="attrs"
+                    v-on="on"
+                    @click="showTypeInfo = !showTypeInfo"
+                    style="cursor: pointer; margin-top: 15px;"
+                  >
+                    {{ icons.mdiHelpCircle }}
+                  </v-icon>
+                </template>
+                <span class="bus-type-description">
+  <p><strong>Bus Eksekutif:</strong></p>
+  <p>
+    Bus eksekutif menawarkan pengalaman perjalanan yang mewah dan nyaman dengan fasilitas premium seperti kursi lebih lebar, ruang kaki lebih lega, hiburan seperti layar TV dan sistem audio, serta mungkin juga dilengkapi dengan fasilitas WiFi untuk kenyamanan selama perjalanan.
+  </p>
+  <p><strong>Bus Ekonomi:</strong></p>
+  <p>
+    Bus ekonomi merupakan pilihan yang lebih terjangkau untuk perjalanan, dengan fasilitas yang lebih sederhana namun tetap nyaman. Meskipun tidak sekomplit bus eksekutif, bus ekonomi tetap memberikan pengalaman perjalanan yang efisien dan dapat menjadi pilihan utama bagi mereka yang mengutamakan hemat biaya.
+  </p>
+</span>
+
+              </v-tooltip>
+            </v-col>
+          </v-row>
         </v-col>
+        <v-col v-if="showTypeInfo && selectedType === 'Eksekutif'" class="info-popup">
+  <v-alert type="info" dismissible @input="showTypeInfo = false" class="info-alert">
+    Bus eksekutif menawarkan fasilitas yang lebih baik dan kenyamanan yang lebih tinggi dibandingkan dengan bus ekonomi. Ini bisa mencakup kursi yang lebih lebar dan lebih nyaman, ruang kaki yang lebih lega, hiburan di dalam bus seperti layar TV, sistem audio, dan mungkin juga fasilitas WiFi.
+  </v-alert>
+</v-col>
+<v-col v-if="showTypeInfo && selectedType === 'Ekonomi'" class="info-popup">
+  <v-alert type="info" dismissible @input="showTypeInfo = false" class="info-alert">
+    Bus ekonomi merupakan pilihan yang lebih terjangkau bagi mereka yang ingin menghemat biaya perjalanan. Fasilitas yang ditawarkan mungkin lebih sederhana dibandingkan dengan bus eksekutif.
+  </v-alert>
+</v-col>
+
       </v-row>
     </v-container>
 
@@ -81,7 +121,7 @@
           <v-col cols="auto">
             <v-avatar size="40" class="mt-2 ml-2">
               <img
-                :src="require('@/assets/images/logos/logo-KBT.png').default"
+                  :src="require('@/assets/images/logos/tiket.png').default"
                 max-height="50px"
                 max-width="100px"
                 alt="avatar"
@@ -123,17 +163,17 @@
                     >
                       PENUH
                     </h3>
-                    <small v-else color="secondary">
+                    <!-- <small v-else color="secondary">
                       Tersedia : {{ item.number_of_seats - count - 1 }} Kursi
-                    </small>
+                    </small> -->
                   </div>
                   <div
                     class="col-md-3"
                     v-if="!Object.keys(bookingCounts).includes(String(item.schedule_id))"
                   >
-                    <small color="secondary">
-                      Tersedia : {{ item.number_of_seats - 1 }} Kursi
-                    </small>
+                    <!-- <small color="secondary">
+                      Tersedia : {{ item.number_of_seats - count - 1 }} Kursi
+                    </small> -->
                   </div>
                   <v-row class="col-md-4 btn-pesan">
                     <v-btn
@@ -159,7 +199,7 @@ import axios from "axios";
 import moment from "moment";
 import "moment/locale/id";
 import { mapActions } from "vuex";
-import { mdiCalendarClock, mdiAccountGroup, mdiAccount } from "@mdi/js";
+import { mdiCalendarClock, mdiAccountGroup, mdiAccount, mdiHelpCircle } from "@mdi/js";
 
 export default {
   setup() {
@@ -168,6 +208,7 @@ export default {
         mdiCalendarClock,
         mdiAccountGroup,
         mdiAccount,
+        mdiHelpCircle,
       },
     };
   },
@@ -179,6 +220,7 @@ export default {
       selectedDate: null,
       selectedRoute: null,
       selectedType: null,
+      showTypeInfo: false, // Add this line to track the visibility of the info pop-up
       schedules: [],
       bookingCounts: {},
       route: [],
@@ -193,7 +235,6 @@ export default {
       axios
         .get("/api/allBrands")
         .then((response) => {
-          console.log(response.data); // Log the response to check the data
           this.brandOptions = response.data; // Directly assign the data array
         })
         .catch((error) => {
@@ -231,35 +272,40 @@ export default {
         });
     },
     filterSchedules() {
-    let filteredSchedules = this.schedules;
-    filteredSchedules = filteredSchedules.filter(schedule =>
-      moment(schedule.tanggal).isSameOrAfter(moment(), 'day') &&
-      moment(schedule.tanggal).isSameOrAfter(moment(), 'hour')
+  let filteredSchedules = this.schedules;
+
+  if (this.selectedDate) {
+    filteredSchedules = filteredSchedules.filter((schedule) =>
+      moment(schedule.tanggal).format("YYYY-MM-DD") ===
+      moment(this.selectedDate).format("YYYY-MM-DD")
     );
-    if (this.selectedDate) {
-      filteredSchedules = filteredSchedules.filter(schedule =>
-        moment(schedule.tanggal).format('YYYY-MM-DD') === moment(this.selectedDate).format('YYYY-MM-DD')
-      );
-    }
+  }
 
-    if (this.selectedRoute) {
-      filteredSchedules = filteredSchedules.filter(schedule => schedule.id === this.selectedRoute);
-    }
+  if (this.selectedRoute) {
+    filteredSchedules = filteredSchedules.filter(
+      (schedule) => schedule.id === this.selectedRoute
+    );
+  }
 
-    if (this.selectedType) {
-      filteredSchedules = filteredSchedules.filter(schedule => schedule.type === this.selectedType);
-    }
+  if (this.selectedType) {
+    filteredSchedules = filteredSchedules.filter(
+      (schedule) => schedule.type === this.selectedType
+    );
+  }
 
-    if (this.selectedBrand) {
-      const selectedBrandId = this.selectedBrand; // Directly use the selected brand id
-      filteredSchedules = filteredSchedules.filter(schedule => schedule.brand_id === selectedBrandId);
-    }
+  if (this.selectedBrand) {
+    const selectedBrandId = this.selectedBrand;
+    filteredSchedules = filteredSchedules.filter(
+      (schedule) => schedule.brand_id === selectedBrandId
+    );
+  }
 
-    return filteredSchedules;
-  },
-formatDate(date) {
-  moment.locale('id');
-  return moment(date).format('dddd, Do MMMM YYYY, HH:mm:ss'); // Format jam menggunakan HH untuk 24 jam
+  // Filter schedules that have not departed yet
+  filteredSchedules = filteredSchedules.filter((schedule) =>
+    moment(schedule.tanggal).isAfter(moment())
+  );
+
+  return filteredSchedules;
 },
 
     countBookings(bookings) {
@@ -391,4 +437,33 @@ formatDate(date) {
     text-align: center;
   }
 }
+.info-popup {
+  width: 50%;
+  max-width: 50vw; /* Maksimum 50% dari lebar viewport */
+  margin: 0 auto; /* Posisi tengah */
+}
+
+.info-alert {
+  background-color: #e3f2fd; /* Warna latar belakang */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Bayangan */
+  font-size: 14px; /* Ukuran font */
+  padding: 16px; /* Padding */
+  margin-top: 16px; /* Jarak dari atas */
+}
+
+.bus-type-description {
+  max-width: 50%; /* Lebarnya hanya 50% dari kontainer induk */
+  margin: 0 auto; /* Tengah secara horizontal */
+  font-size: 16px; /* Ukuran font */
+  line-height: 1.6; /* Jarak antar baris */
+  text-align: justify; /* Ratakan teks */
+  padding: 10px; /* Padding */
+  background-color: #f0f0f0; /* Warna latar belakang */
+  border: 1px solid #ccc; /* Garis tepi */
+  border-radius: 5px; /* Sudut bulat */
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Bayangan */
+  margin-top: 20px; /* Jarak dari atas */
+}
+
 </style>
+

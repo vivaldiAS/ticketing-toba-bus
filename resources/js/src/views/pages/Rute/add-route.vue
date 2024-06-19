@@ -5,43 +5,45 @@
       <v-form class="bg-light">
         <v-row>
           <v-col cols="12" md="3">
-            <label for="depature">Keberangkatan</label>
+            <label for="derpature">Keberangkatan</label>
           </v-col>
 
           <v-col cols="12" md="9">
-            <v-text-field
-              id="depature"
+            <v-select
+              id="derpature"
               v-model="routes.derpature"
+              :items="locations"
               outlined
               dense
               placeholder="Keberangkatan"
               :error-messages="errors.derpature"
-            ></v-text-field>
+              @change="filterArrivals"
+            ></v-select>
           </v-col>
 
           <v-col cols="12" md="3">
-            <label for="username">Kedatangan</label>
+            <label for="arrival">Kedatangan</label>
           </v-col>
 
           <v-col cols="12" md="9">
-            <v-text-field
-              id="Username"
+            <v-select
+              id="arrival"
               v-model="routes.arrival"
-              type="text"
+              :items="filteredArrivals"
               outlined
               dense
               placeholder="Kedatangan"
               :error-messages="errors.arrival"
-            ></v-text-field>
+            ></v-select>
           </v-col>
 
           <v-col cols="12" md="3">
-            <label for="username">Harga</label>
+            <label for="harga">Harga</label>
           </v-col>
 
           <v-col cols="12" md="9">
             <v-text-field
-              id="Username"
+              id="harga"
               v-model="routes.harga"
               type="text"
               outlined
@@ -50,8 +52,9 @@
               :error-messages="errors.harga"
             ></v-text-field>
           </v-col>
+
           <v-col cols="12" md="3">
-            <label for="username">Type</label>
+            <label for="type">Type</label>
           </v-col>
 
           <v-col cols="12" md="9">
@@ -76,23 +79,55 @@
 </template>
 
 <script>
-import { ref } from "@vue/composition-api";
+import { ref, computed } from "@vue/composition-api";
 import Swal from "sweetalert2";
 import axios from "axios";
 
 export default {
   setup() {
     const errors = ref({});
+    const locations = ref([]);
+    const routes = ref({
+      derpature: "",
+      arrival: "",
+      harga: "",
+      type: "",
+    });
+
+    const fetchLocations = async () => {
+      const access_token = localStorage.getItem("access_token");
+      try {
+        const response = await axios.get("http://127.0.0.1:8000/api/lokasi-loket", {
+          headers: {
+            Authorization: `Bearer ${access_token}`,
+          },
+        });
+        locations.value = response.data;
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    const filteredArrivals = computed(() => {
+      if (!routes.value.derpature) {
+        return [];
+      }
+      return locations.value.filter(location => location !== routes.value.derpature);
+    });
+
+    fetchLocations();
 
     return {
-      routes: ["derpature", "arrival", "harga", "type"],
+      routes,
+      locations,
       errors,
+      filteredArrivals,
     };
   },
-  data() {
-    return {};
-  },
   methods: {
+    filterArrivals() {
+      // This method can be left empty since the filtering logic is in the computed property
+    },
     AddRoute() {
       const access_token = localStorage.getItem("access_token");
 

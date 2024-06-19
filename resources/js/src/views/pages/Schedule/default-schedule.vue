@@ -5,14 +5,17 @@
         Tambah Jadwal ke Jadwal Mingguan
       </v-btn>
       <v-spacer></v-spacer>
-      <v-text-field v-model="search" append-icon="mdi-magnify" label="Cari" hide-details></v-text-field>
+      <!-- <v-text-field v-model="search" append-icon="mdi-magnify" label="Cari" hide-details></v-text-field> -->
+      <v-btn class="mb-3" color="primary" @click="addJadwal">
+        Tambahkan jadwal
+      </v-btn>
     </v-card-title>
     <v-card-text>
       <v-row>
         <v-col v-for="day in daysOfWeek" :key="day" class="day-column">
           <h3>{{ dayLabels[day] }}</h3>
           <div v-for="schedule in filteredSchedules[day]" :key="schedule.nomor_pintu">
-            <v-btn :color="getButtonColor(schedule.nomor_pintu)" dark style="margin-top: 1rem;">
+            <v-btn :color="getButtonColor(schedule.nomor_pintu)" dark style="margin-top: 1rem;" @click="goToRUDDefaultSchedule(schedule.id)">
               {{ schedule.nomor_pintu }}
             </v-btn>
           </div>
@@ -58,31 +61,44 @@ export default {
   },
   computed: {
     filteredSchedules() {
-      const filtered = {
-        monday: [],
-        tuesday: [],
-        wednesday: [],
-        thursday: [],
-        friday: [],
-        saturday: [],
-        sunday: []
-      };
+  // Initialize filtered object with arrays for each day
+  const filtered = {
+    monday: [],
+    tuesday: [],
+    wednesday: [],
+    thursday: [],
+    friday: [],
+    saturday: [],
+    sunday: []
+  };
 
-      this.schedules.forEach(schedule => {
-        const day = this.daysOfWeek[schedule.day_of_week - 1];
-        filtered[day].push(schedule);
-      });
-
-      if (this.search) {
-        for (const day in filtered) {
-          filtered[day] = filtered[day].filter(schedule =>
-            schedule.nomor_pintu.toLowerCase().includes(this.search.toLowerCase())
-          );
-        }
-      }
-
-      return filtered;
+  this.schedules.forEach(schedule => {
+    // Ensure day_of_week is within the expected range or map 0 to Sunday
+    let day;
+    if (schedule.day_of_week === 0) {
+      day = 'sunday';
+    } else if (schedule.day_of_week >= 1 && schedule.day_of_week <= 7) {
+      day = this.daysOfWeek[schedule.day_of_week - 1];
+    } else {
+      console.error('Invalid day_of_week:', schedule.day_of_week);
+      return; // Skip invalid day_of_week
     }
+    filtered[day].push(schedule);
+  });
+
+  // Log the filtered schedules before applying the search filter
+  console.log('Filtered schedules before search:', filtered);
+
+  if (this.search) {
+    for (const day in filtered) {
+      filtered[day] = filtered[day].filter(schedule =>
+        schedule.nomor_pintu.toLowerCase().includes(this.search.toLowerCase())
+      );
+    }
+  }
+
+  return filtered;
+}
   },
   methods: {
     fetchSchedules() {
@@ -95,9 +111,10 @@ export default {
         .then(response => {
           this.schedules = response.data;
           this.access_token = access_token;
+          console.log('Schedules fetched:', this.schedules);
         })
         .catch(error => {
-          console.error(error);
+          console.error('Error fetching schedules:', error);
         });
     },
     getButtonColor(value) {
@@ -106,8 +123,27 @@ export default {
     },
     goToAddDefaultSchedule() {
       this.$router.push({ name: 'add-default-schedule' });
+    },
+    addJadwal() {
+      const access_token = localStorage.getItem('access_token');
+      axios.post('http://127.0.0.1:8000/api/DefaultSchedulesToSchedules', {}, {
+        headers: {
+          Authorization: `Bearer ${access_token}`
+        }
+      })
+        .then(response => {
+          console.log(response.data.message); // Optional: Handle the response message
+          this.$router.push({ name: 'dashboard' });
+        })
+        .catch(error => {
+          console.error('Error adding jadwal:', error);
+        });
+    },
+    goToRUDDefaultSchedule(id) {
+      this.$router.push({ name: 'rud-default-schedule', params: { id: id } });
     }
   },
+
   mounted() {
     this.fetchSchedules();
   }

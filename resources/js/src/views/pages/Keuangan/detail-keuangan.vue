@@ -26,17 +26,17 @@
           <tbody>
             <tr>
               <td class="judul">Komisi</td>
-              <td>10% * {{ totalSemua | toRupiah }}</td>
+              <td>{{ persentaseKomisi }}% * {{ totalSemua | toRupiah }}</td>
               <td>{{ komisi | toRupiah }}</td>
             </tr>
             <tr>
               <td class="judul">Kantor</td>
-              <td>1 * Rp 53.000</td>
+              <td>1 * {{ setoranKantor | toRupiah }}</td>
               <td>{{ kantor | toRupiah }}</td>
             </tr>
             <tr>
               <td class="judul">Administrasi</td>
-              <td>1 * Rp 5.000</td>
+              <td>1 * {{ administrasi | toRupiah }}</td>
               <td>{{ admin | toRupiah }}</td>
             </tr>
             <tr>
@@ -70,13 +70,17 @@ export default {
           align: "start",
           value: "name",
         },
-        { text: "Bangku", value: "num_seats" },
-        { text: "No Telepon", value: "phone_number" },
+        { text: "Jumlah Bangku", value: "num_seats" },
+        { text: "Nomor Bangku", value: "seat_number" },
+        { text: "No Telepon", value: "number_phone" },
         { text: "Penjumputan", value: "alamatJemput" },
         { text: "Metode", value: "method" },
         { text: "Harga", value: "harga" },
       ],
       selectedDate: "",
+      persentaseKomisi: 0,
+      setoranKantor: 0,
+      administrasi: 0,
     };
   },
   mounted() {
@@ -88,6 +92,7 @@ export default {
     } else if (this.userRole === "admin_loket") {
       url = `/api/Detail-keuangan-ByPassenger/${this.schedule_id}`;
     }
+
     axios
       .get(url, {
         headers: {
@@ -96,8 +101,22 @@ export default {
       })
       .then((response) => {
         this.ListPenumpang = response.data.data;
+      })
+      .catch((error) => {
+        console.log(error);
+      });
 
-        this.harga = +this.ListPenumpang[0].harga;
+    axios
+      .get(`/api/komisi/${this.schedule_id}`, {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+        },
+      })
+      .then((response) => {
+        const komisiData = response.data.data;
+        this.persentaseKomisi = komisiData.persentase_komisi;
+        this.setoranKantor = komisiData.setoran_kantor;
+        this.administrasi = komisiData.administrasi;
       })
       .catch((error) => {
         console.log(error);
@@ -124,23 +143,19 @@ export default {
     },
     totalSemua() {
       let total = 0;
-      total = this.ListPenumpang.length * this.harga;
+      this.ListPenumpang.forEach(item => {
+        total += parseInt(item.harga);
+      });
       return total;
     },
     komisi() {
-      let komisi = 0;
-      komisi = (10 / 100) * +this.totalSemua;
-      return komisi;
+      return (this.persentaseKomisi / 100) * this.totalSemua;
     },
     kantor() {
-      let kantor = 0;
-      kantor = 1 * 53000;
-      return kantor;
+      return this.setoranKantor;
     },
     admin() {
-      let admin = 0;
-      admin = 1 * 5000;
-      return admin;
+      return this.administrasi;
     },
     filteredList() {
       return this.ListByDate.filter((item) => {
@@ -153,7 +168,8 @@ export default {
   },
 };
 </script>
-<style scope>
+
+<style scoped>
 .table-primary tr .judul {
   background-color: var(--v-primary-base);
   color: white;

@@ -33,7 +33,7 @@
         <v-col>
           <v-select
             v-model="selectedType"
-            :items="['Economi', 'Executive']"
+            :items="['Ekonomi', 'Eksekutif']"
             placeholder="Pilih Type"
             clearable
             hide-details
@@ -53,7 +53,7 @@
         <v-col cols="auto">
           <v-avatar size="40" class="mt-2 ml-2">
             <img
-              :src="require('@/assets/images/logos/logo-KBT.png').default"
+            :src="require('@/assets/images/logos/tiket.png').default"
               max-height="50px"
               max-width="100px"
               alt="avatar"
@@ -245,8 +245,6 @@ export default {
           this.st = response.data.total;
           this.bookingCounts = this.countBookings(response.data.total);
 
-          console.log(this.schedules);
-          console.log(this.st);
         })
         .catch((error) => {
           console.log(error);
@@ -289,7 +287,7 @@ export default {
     this.getLoketByAdmin(); // Panggil metode getLoketByAdmin
 
     axios
-      .get("api/routes/show/all", {
+      .get("api/routes", {
         headers: {
           Authorization: `Bearer ${access_token}`,
         },

@@ -319,47 +319,51 @@ export default {
         });
     },
     BayarCash() {
-      const access_token = localStorage.getItem("access_token");
-      const email = this.isAccount ? this.bookings.email : null;
-      axios
+    const access_token = localStorage.getItem("access_token");
+    const email = this.isAccount ? this.bookings.email : null;
+    const postData = {
+        user_id: this.user.id,
+        schedules_id: this.id_schedule,
+        name: this.passengerData.name,
+        number_phone: this.passengerData.number_phone,
+        num_seats: this.selectedSeat,
+        alamatJemput: this.passengerData.alamatJemput,
+        harga: this.harga * this.selectedSeat.length,
+        status: 0,
+        email: email
+    };
+
+    axios
         .post(
-          "api/bookings",
-          {
-            schedules_id: this.id_schedule,
-            name: this.passengerData.name,
-            number_phone: this.passengerData.number_phone,
-            num_seats: this.selectedSeat,
-            alamatJemput: this.passengerData.alamatJemput,
-            harga: this.harga,
-            status: "complete",
-            email: email
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${access_token}`,
-            },
-          }
+            "api/bookings",
+            postData,
+            {
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                },
+            }
         )
         .then((response) => {
-          Swal.fire({
-            icon: "success",
-            title: "Pembayaran Berhasil",
-            text: "Terima kasih sudah melakukan pembayaran",
-          });
+            Swal.fire({
+                icon: "success",
+                title: "Pembayaran Berhasil",
+                text: "Terima kasih sudah melakukan pembayaran",
+            });
 
-          this.$router.push({
-            name: "pesananku",
-          });
+            this.$router.push({
+                name: "pesananku",
+            });
         })
         .catch((error) => {
-          console.log(error);
-          Swal.fire({
-            icon: "error",
-            title: "Oops...",
-            text: "Terjadi kesalahan saat melakukan pembayaran",
-          });
+            console.error(error);
+            Swal.fire({
+                icon: "error",
+                title: "Oops...",
+                text: "Terjadi kesalahan saat melakukan pembayaran",
+            });
         });
-    },
+},
+
     cancel() {
       Swal.fire({
         icon: "question",
@@ -377,53 +381,70 @@ export default {
       });
     },
     BayarNontunai() {
-      const access_token = localStorage.getItem("access_token");
-      try {
-        axios
-          .post(
-            "api/bookings/nontunai",
+    const access_token = localStorage.getItem("access_token");
+    const email = this.user.email;
+    const user = this.$store.state.user;
+    const schedulesId = this.id_schedule;
+    const name = this.passengerData.name;
+    const number_phone = this.passengerData.number_phone;
+    const alamatJemput = this.passengerData.alamatJemput;
+    const num_seats = this.selectedSeat;
+    const userId = this.user.id;
+
+    if (!userId) {
+        console.error("User data is missing or user is not logged in");
+        Swal.fire({
+            icon: "error",
+            title: "Oops...",
+            text: "User data is missing or user is not logged in",
+        });
+        return;
+    }
+
+    const postData = {
+        user_id: userId,
+        schedules_id: schedulesId,
+        name: name,
+        number_phone: number_phone,
+        num_seats: num_seats,
+        alamatJemput: alamatJemput,
+        harga: this.harga * num_seats.length,
+        status: 0,
+        email: email
+    };
+
+    // Logging the data to be sent
+    console.log("Data to be sent:", postData);
+
+    axios
+        .post(
+            "api/bookings/bayarmt",
+            postData,
             {
-              schedules_id: this.id_schedule,
-              name: this.passengerData.name,
-              number_phone: this.passengerData.number_phone,
-              num_seats: this.selectedSeat,
-              alamatJemput: this.passengerData.alamatJemput,
-              harga: this.harga,
-            },
-            {
-              headers: {
-                Authorization: `Bearer ${access_token}`,
-              },
+                headers: {
+                    Authorization: `Bearer ${access_token}`,
+                },
             }
-          )
-          .then((response) => {
-            this.loading = true;
-            const data = response.data;
-            window.open(data.data.virtual_account_info.how_to_pay_page, "_blank");
-            this.loading = false;
+        )
+        .then((response) => {
+          const bookingId = response.data.data.booking_id;
+            // Simpan informasi pemesanan ke dalam local storage
+            localStorage.setItem("bookingData", JSON.stringify(response.data.data));
 
-            setTimeout(() => {
-              this.$router.push({
-                name: "pesananku",
-              });
-            }, 1000);
-
-            if (data.code === 200 && data.data.virtual_account_info.how_to_pay_api) {
-              const howToPayApi = data.data.virtual_account_info.how_to_pay_api;
-              this.$router.push({
-                name: 'pembayaran-instruction-bca',
-                params: { howToPayApi: howToPayApi }
-              });
-
-            } else {
-              console.error("Invalid response or missing how_to_pay_page XML");
-            }
+            // Pengalihan ke halaman loket pembayaran
+            this.$router.push({
+              name: "payment-mt",
+              params: { bookingId: bookingId } // Gunakan nomor booking sebagai parameter
           });
-      } catch (error) {
-        console.error(error);
-      } finally {
-        this.loading = false;
-      }
+        })
+        .catch((error) => {
+            console.error("Error posting data:", error);
+            Swal.fire({
+                icon: "error",
+                title: "Oops...",
+                text: "Terjadi kesalahan saat melakukan pembayaran",
+            });
+        });
     },
     BayarLangsung() {
       const access_token = localStorage.getItem("access_token");

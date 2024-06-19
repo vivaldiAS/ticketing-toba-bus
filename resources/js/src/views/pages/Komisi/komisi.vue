@@ -1,8 +1,14 @@
 <template>
   <div>
     <h2>Komisi</h2>
-    <v-text-field type="date" label="Pilih tanggal" placeholder="Pilih Tanggal" v-model="selectedDate"
-      style="width: 300px" solo />
+    <v-text-field
+      type="date"
+      label="Pilih tanggal"
+      placeholder="Pilih Tanggal"
+      v-model="selectedDate"
+      style="width: 300px"
+      solo
+    />
     <template>
       <v-simple-table class="table-primary">
         <template v-slot:default>
@@ -10,15 +16,17 @@
             <tr colspan="3">
               <th class="text-center pt-3">
                 <h3>
-                  Surat Jalan <br />
-                  Bintang Tapanuli
+                  Komisi
+                  <!-- Surat Jalan <br /> -->
+                  <!-- Bintang Tapanuli -->
                 </h3>
                 <p>
-                  Kantor pusat : Jl D.I Panjaitan No.24 Tarutung Telp (0633) 21090
+                  <!-- Kantor pusat : Jl D.I Panjaitan No.24 Tarutung Telp (0633) 21090
                   4902039<br />
-                  Tarutung : Telp (0633) 21090. Loket Terminal Telp. (0633) 7325354 <br />
+                  Tarutung : Telp (0633) 21090. Loket Terminal Telp. (0633) 7325354
+                  <br />
                   Perwakilan Medan : Jl.Sisimangaraja No.27 Km. 6,5 Medan Telp. (061)
-                  77823226-76329910
+                  77823226-76329910 -->
                 </p>
               </th>
             </tr>
@@ -30,14 +38,18 @@
       <template #item.Tanggal="{ item }">
         {{ formatDate(item.tanggal) }}
       </template>
-      <template #item.total="{ item }"> {{ item.total | toRupiah }} </template>
+      <template #item.total="{ item }">
+        {{ item.total | toRupiah }}
+      </template>
       <template #item.jumlah="{ item }">
         {{ JumlahSetoran(item.total, item.jumlah) | toRupiah }}
       </template>
       <template #item.perusahaan="{ item }">
         {{ perusahaan(item.total, item.jumlah) | toRupiah }}
       </template>
-      <template #item.adm="{ item }"> {{ Adm(item.total) | toRupiah }} </template>
+      <template #item.adm="{ item }">
+        {{ Adm(item.total) | toRupiah }}
+      </template>
       <template #item.Detail="{ item }">
         <router-link :to="{ name: 'detail-komisi', params: { tanggal: item.tanggal } }">
           Detail
@@ -46,6 +58,7 @@
     </v-data-table>
   </div>
 </template>
+
 <script>
 import moment from "moment";
 import axios from "axios";
@@ -74,7 +87,6 @@ export default {
   },
   mounted() {
     const access_token = localStorage.getItem("access_token");
-    // console.log(combinedDat);
     let url = '';
 
     if (this.userRole === "direksi" || this.userRole === "admin_kantor") {
@@ -111,14 +123,11 @@ export default {
     formatDate(date) {
       return moment(date).format("dddd, Do MMMM YYYY");
     },
-
-
     JumlahSetoran(total, jlhTgl) {
-      return total - ((0.1 * total) + (jlhTgl * 53000 )+ (jlhTgl * 5000));
+      return total - ((0.1 * total) + (jlhTgl * 53000) + (jlhTgl * 5000));
     },
-
     perusahaan(total, jlhTgl) {
-      return (60 / 100) * ((10 / 100) * total) + (jlhTgl * 53000 )+ (jlhTgl *5000);
+      return (60 / 100) * ((10 / 100) * total) + (jlhTgl * 53000) + (jlhTgl * 5000);
     },
     Adm(total) {
       return (40 / 100) * ((10 / 100) * total);
@@ -126,7 +135,7 @@ export default {
   },
   computed: {
     userRole() {
-      return this.$store.state.userRole
+      return this.$store.state.userRole;
     },
     filteredItems() {
       if (!this.selectedDate) {
@@ -139,7 +148,7 @@ export default {
     },
     combinedData() {
       return this.ListByDate.map((item) => {
-        const match = this.JumlahTanggal.find((t) => t.tanggal === item.tanggal);
+        const match = this.JumlahTanggal ? this.JumlahTanggal.find((t) => t.tanggal === item.tanggal) : null;
         return {
           ...item,
           jumlah: match ? match.jumlah : 0,
@@ -160,7 +169,8 @@ export default {
   },
 };
 </script>
-<style scope>
+
+<style scoped>
 .table-primary tr th {
   background-color: var(--v-primary-base);
   color: white;

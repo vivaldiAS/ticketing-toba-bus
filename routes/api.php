@@ -23,6 +23,8 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\DokuPaymentController;
 use App\Http\Controllers\PaymentsController;
 use App\Http\Controllers\DefaultSchedulesController;
+use App\Http\Controllers\KomisiController;
+
 
 
 use App\Models\Bookings;
@@ -77,16 +79,18 @@ Route::put('status/update/auto/{id}', [ScheduleController::class, 'UpdateStatusA
 
 Route::middleware(['auth:api', 'role: admin_kantor,direksi'])->group(function () {
 Route::put('/account/update/status/{id}', [UpdateStatusUserController::class, 'update']);
-Route::get('user/get/{id}', [UserController::class, 'getUser']);
 });
 
 
 Route::middleware(['auth:api', 'role:admin_loket,admin_kantor,driver,passenger,direksi'])->group(function () {
     Route::post('logout', [LoginController::class, 'logout']);
+    Route::get('/bookings/my', [BookingController::class, 'getByUserId']);
+
     Route::post('user/update-password', [UserController::class, 'updatePassword']);
     Route::get('/user/profile', [UserController::class, 'user']);
     Route::get('payments/{paymentId}', [PaymentsController::class, 'getPaymentById']);
     Route::get('/routes', [RoutesController::class, 'getAllRoutes']);
+    Route::get('user/get/{id}', [UserController::class, 'getUser']);
 });
 
 Route::put('/konfirmasiberhasiltunai', [BookingController::class, 'confirmBooking']);
@@ -95,6 +99,7 @@ Route::put('/batalkanbooking', [BookingController::class, 'cancelBooking']);
 
 Route::middleware(['auth:api', 'role:admin_loket,admin_kantor,driver,passenger'])->group(function () {
     Route::get('/routes/show/all', [RoutesController::class, 'showRoutesByAdminId']);
+    Route::get('/route-bus/show/all', [RoutesController::class, 'showRoutesBusByAdminId']);
     
     Route::get('/schedule/show/{id}', [ScheduleController::class, 'SelectOne']);
     Route::get('/schedule/bayartunai/{id}', [ScheduleController::class, 'SelectOnes']);
@@ -107,13 +112,16 @@ Route::middleware(['auth:api', 'role:admin_loket,admin_kantor,driver,passenger']
     Route::get('/bookings/show/waiting/schedules/{id}', [BookingController::class, 'WaitPayment']);
     Route::get('/bookings/show/{id}', [BookingController::class, 'getOne']);
     Route::get('/pesanan/ticket/{id}', [TicketController::class, 'index']);
-    Route::get('/bookings/my', [BookingController::class, 'getByUserId']);
     Route::post('bookings/bayartunai', [BookingController::class, 'bookingBayarTunai']);
+    Route::post('bookings/bayarmt', [BookingController::class, 'bookingMidtrans']);
 });
+
+
 
 
 Route::middleware(['auth:api', 'role:admin_loket,direksi'])->group(function () {
     Route::get('/Keuangan/index', [KeuanganController::class, 'index']);
+
     Route::get('/Detail-keuangan-Bydate/{tanggal}', [KeuanganController::class, 'getByTanggal']);
     Route::get('/Detail-keuangan-ByPassenger/{id}', [KeuanganController::class, 'getPassenger']);
     Route::get('/bookings/index/all', [BookingController::class, 'index']);
@@ -131,10 +139,20 @@ Route::middleware(['auth:api', 'role:passenger'])->group(function () {
 
 
 Route::middleware(['auth:api', 'role:admin_kantor'])->group(function () {
-    Route::post('/schedule/add', [ScheduleController::class, 'store']);
+    Route::delete('/deleteSchedule/{id}', [ScheduleController::class, 'deleteschedule']);
 
+    Route::post('/DefaultSchedulesToSchedules', [DireksiController::class, 'DefaultSchedulesToSchedules']);
+
+    Route::get('/Detail-keuangan-ByPassenger/all/{id}', [DireksiController::class, 'getPassenger']);
+    Route::get('/Detail-keuangan-Bydate/all/{tanggal}', [DireksiController::class, 'getByTanggal']);
+
+    Route::get('/lokasi-loket', [RoutesController::class, 'getLokasiLoket']);
+    Route::post('/DefaultSchedulesToSchedules', [DireksiController::class, 'DefaultSchedulesToSchedules']);
+    Route::post('/schedule/add', [ScheduleController::class, 'store']);
+    Route::put('/default-schedules/edit/{id}', [DefaultSchedulesController::class, 'editDefaultSchedules']);
     Route::post('/default-schedules/add', [defaultSchedulesController::class, 'addDefaultSchedules']);
     Route::get('/default-schedules', [DefaultSchedulesController::class, 'getDefaultSchedules']);
+    Route::get('/default-schedules/{id}', [DefaultSchedulesController::class, 'getDefaultScheduleById']);
 
     Route::get('/Dashboard/direksi', [DashboardDireksiController::class, 'CountAll']);
     Route::post('/buses/store', [PASTIController::class, 'storeBus']);
@@ -160,7 +178,7 @@ Route::middleware(['auth:api', 'role:admin_kantor'])->group(function () {
 
     Route::post('/buss/add', [BusController::class, 'store']);
     Route::get('/buss/show/all', [BusController::class, 'show']);
-    Route::get('/buss/show/notAssociated', [BusController::class, 'notAsssociated']);
+    Route::get('/buss/show/notAssociated', [BusController::class, 'notAssociated']);
     Route::get('/buss/show/noJadwal', [BusController::class, 'busnoJadwal']);
     Route::put('/buss/update/{id}', [BusController::class, 'update']);
     Route::delete('/buss/delete/{id}', [BusController::class, 'delete']);
@@ -179,6 +197,8 @@ Route::middleware(['auth:api', 'role:driver'])->group(function () {
     Route::put('/update-status/{id}', [ScheduleController::class, 'UpdateStatusBus']);
 });
 
+Route::get('/user/all', [DireksiController::class, 'userAll']);
+
 Route::middleware(['auth:api', 'role:direksi'])->group(function () {
     Route::get('/statistik/direksi', [DireksiController::class, 'CountAdminKantor']);
     Route::get('/GetAdminKantor', [DireksiController::class, 'getadminkantor']);
@@ -191,9 +211,16 @@ Route::middleware(['auth:api', 'role:direksi'])->group(function () {
 });
 
 
+Route::middleware(['auth:api', 'role:admin_kantor'])->group(function () {
+    Route::get('/komisi/{id}', [KomisiController::class, 'index']);
+    Route::get('/komisi', [KomisiController::class, 'index2']);
+    Route::put('/komisi', [KomisiController::class, 'updateKomisi']);
+});
 
-    Route::get('/Detail-keuangan-Bydate/all/{tanggal}', [DireksiController::class, 'getByTanggal']);
-    Route::get('/Detail-keuangan-ByPassenger/all/{id}', [DireksiController::class, 'getPassenger']);
+
+
+
+Route::post('/payment/callback', [BookingController::class, 'callback']);
 
 
 // PA 2

@@ -10,6 +10,62 @@ use Carbon\Carbon;
 
 class defaultSchedulesController extends Controller
 {
+    public function editDefaultSchedules(Request $request, $id)
+    {
+        try {
+            // Ambil data dari request
+            $bus_id = $request->input('bus_id');
+            $route_id = $request->input('route_id');
+            $day_of_week = $request->input('day_of_week');
+            $time = $request->input('time');
+            $harga = $request->input('harga');
+
+            // Lakukan update ke tabel default_schedules
+            DB::table('default_schedules')
+                ->where('id', $id)
+                ->update([
+                    'bus_id' => $bus_id,
+                    'route_id' => $route_id,
+                    'day_of_week' => $day_of_week,
+                    'time' => $time,
+                    'harga' => $harga,
+                ]);
+
+            return response()->json(['message' => 'Jadwal default berhasil diperbarui'], 200);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Terjadi kesalahan saat memperbarui jadwal default'], 500);
+        }
+    }
+    public function getDefaultScheduleById($id)
+{
+    // Check if a user is authenticated
+    if (Auth::check()) {
+        // Get the currently authenticated user's admin_id
+        $adminId = Auth::user()->id;
+
+        // Retrieve the default schedule for the logged-in admin with the specified ID
+        $defaultSchedule = DB::table('default_schedules as ds')
+            ->join('brands as b', 'b.id', '=', 'ds.brand_id')
+            ->leftJoin(DB::raw('(SELECT DISTINCT * FROM buses) as bs'), 'bs.id', '=', 'ds.bus_id')
+            ->where('b.admin_id', '=', $adminId)
+            ->where('ds.id', '=', $id)
+            ->select('ds.*', 'bs.nomor_pintu')
+            ->first(); // Use first() to get a single record
+
+        // Check if the schedule exists
+        if ($defaultSchedule) {
+            // Return the data as JSON
+            return response()->json($defaultSchedule);
+        } else {
+            // Return an error response if the schedule is not found
+            return response()->json(['error' => 'Schedule not found'], 404);
+        }
+    } else {
+        // Return an error response if the user is not authenticated
+        return response()->json(['error' => 'Unauthenticated'], 401);
+    }
+}
+
     public function getDefaultSchedules()
     {
         // Check if a user is authenticated

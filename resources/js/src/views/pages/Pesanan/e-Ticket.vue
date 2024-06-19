@@ -29,9 +29,9 @@
           <div class="ticket_isi">
             <v-avatar size="40" class="mt-2 ml-2 logo">
               <img
-                :src="require('@/assets/images/logos/logo-KBT.png').default"
+                :src="require('@/assets/images/logo/logo-no-background-hijau.png').default"
                 max-height="50px"
-                max-width="100px"
+                max-width="700px"
                 alt="avatar"
               />
             </v-avatar>
@@ -69,12 +69,12 @@
               </tr>
               <tr>
                 <td class="value">{{ this.ticket.tanggal }}</td>
-                <td class="value">{{ this.ticket.harga | toRupiah }}</td>
+                <td class="value">{{ this.ticket.harga * this.ticket.seat_number.length | toRupiah }}</td>
               </tr>
               <!-- Tambahkan baris tambahan jika diperlukan -->
             </table>
           </div>
-          <p class="ticket__text">e-KBT</p>
+          <p class="ticket__text">e-TobaTrans</p>
         </div>
       </div>
     </v-card>
@@ -135,7 +135,6 @@ export default {
         })
         .then((response) => {
           this.ticket = response.data.data[0];
-          console.log(this.ticket);
         })
         .catch((error) => {
           console.log(error);
@@ -178,7 +177,7 @@ export default {
       });
 
       const logoImg = new Image();
-      logoImg.src = require("@/assets/images/logos/logo-KBT.png").default;
+      logoImg.src = require("@/assets/images/logo/logo-no-background-hijau.png").default;
       doc.addImage(logoImg, "PNG", 5, 8, 8, 8);
 
       // Add the header for the ticket

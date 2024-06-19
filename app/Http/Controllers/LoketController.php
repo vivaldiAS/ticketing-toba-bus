@@ -25,39 +25,52 @@ class LoketController extends BaseController
         return response()->json(['data' => $lokets]);
     }
     public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'nama_loket' => 'required|string',
-            'lokasi_loket' => 'required|string',
-            'admin_id' => 'required|integer|unique:lokets',
-        ], [
-            'required' => ':attribute tidak boleh kosong.',
-            'string' => ':attribute hanya bisa diisi oleh huruf dan angka.',
-            'admin_id.unique' => 'Admin telah terdaftar di loket lain.',
-            'admin_id.required'=> 'Admin harus diisi.',
-            'lokasi_loket.required'=> 'Lokasi loket harus diisi.',
-            'nama_loket.required'=> 'Nama loket harus diisi.',
-        ]);
-        if ($validator->fails()) {
-            return $this->sendError('Input tidak boleh kosong', $validator->errors(), 422);
-        }
-    
-        // Dapatkan ID user yang sedang login
-        $userId = Auth::id();
-    
-        // Query untuk mendapatkan brand_id dari tabel brands berdasarkan admin_id
-        $brandId = DB::table('users')
-            ->join('brands', 'brands.admin_id', '=', 'users.id')
-            ->where('users.id', $userId)
-            ->value('brands.id');
-    
-        $input = $request->all();
-        $input['brand_id'] = $brandId; // Tambahkan nilai brand_id ke input
-    
-        DB::table('lokets')->insert($input); // Menambahkan data ke tabel lokets
-    
-        return $this->sendResponse($input, 'Berhasil Menambahkan Loket.');
+{
+    // Validation
+    $validator = Validator::make($request->all(), [
+        'nama_loket' => 'required|string',
+        'lokasi_loket' => 'required|string',
+        'admin_id' => 'required|integer|unique:lokets',
+    ], [
+        'required' => ':attribute tidak boleh kosong.',
+        'string' => ':attribute hanya bisa diisi oleh huruf dan angka.',
+        'admin_id.unique' => 'Admin telah terdaftar di loket lain.',
+        'admin_id.required'=> 'Admin harus diisi.',
+        'lokasi_loket.required'=> 'Lokasi loket harus diisi.',
+        'nama_loket.required'=> 'Nama loket harus diisi.',
+    ]);
+
+    if ($validator->fails()) {
+        return $this->sendError('Input tidak boleh kosong', $validator->errors(), 422);
     }
+
+    // Get the ID of the currently logged-in user
+    $userId = Auth::id();
+
+    // Query to get the brand_id from the brands table based on admin_id
+    $brandId = DB::table('users')
+        ->join('brands', 'brands.admin_id', '=', 'users.id')
+        ->where('users.id', $userId)
+        ->value('brands.id');
+
+    // Query to get the brand name from the brands table based on admin_id
+    $brandName = DB::table('users')
+        ->join('brands', 'brands.admin_id', '=', 'users.id')
+        ->where('users.id', $userId)
+        ->value('brands.merk');
+
+    // Prepare the input data
+    $input = $request->all();
+    $input['brand_id'] = $brandId; // Add the brand_id to the input
+
+    // Append the brand name to the nama_loket
+    $input['nama_loket'] = $input['nama_loket'] . ' ' . $brandName;
+
+    // Insert the data into the lokets table
+    DB::table('lokets')->insert($input);
+
+    return $this->sendResponse($input, 'Berhasil Menambahkan Loket.');
+}
 
     public function UpdateStatus($id)
     {

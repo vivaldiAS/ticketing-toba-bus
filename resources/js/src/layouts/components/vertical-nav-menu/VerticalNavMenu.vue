@@ -58,11 +58,11 @@
           :to="{ name: 'catatan-keuangan' }"
           :icon="icons.mdiCashCheck"
         ></nav-menu-link>
-        <nav-menu-link
+        <!-- <nav-menu-link
           title="Komisi"
           :to="{ name: 'komisi' }"
           :icon="icons.mdiCurrencyUsd"
-        ></nav-menu-link>
+        ></nav-menu-link> -->
       </div>
       <div v-if="userRole === 'admin_kantor'">
         <nav-menu-group title="Loket" :icon="icons.mdiCarCog">
@@ -103,6 +103,13 @@
             :to="{ name: 'pages-default-schedule' }"
             :icon="icons.mdiCalendarWeek"
         ></nav-menu-link>
+
+        <nav-menu-link
+            title="Edit Komisi"
+            :to="{ name: 'komisi-action' }"
+            :icon="icons.mdiCurrencyUsd"
+          ></nav-menu-link>
+
 
         <nav-menu-link
           title="Catatan Keuangan"
@@ -155,6 +162,11 @@
           :to="{ name: 'list-brands' }"
           :icon="icons.mdiTag"
         ></nav-menu-link>
+        <nav-menu-link
+          title="Penumpang"
+          :to="{ name: 'list-penumpang' }"
+          :icon="icons.mdiAccount"
+        ></nav-menu-link>
         <!-- <nav-menu-link
           title="Catatan Keuangan"
           :to="{ name: 'catatan-keuangan' }"
@@ -191,6 +203,7 @@
 <script>
 import {
   mdiAccountTie,
+  mdiAccount,
   mdiHomeOutline,
   mdiAlphaTBoxOutline,
   mdiEyeOutline,
@@ -207,6 +220,7 @@ import {
   mdiHistory,
   mdiCurrencyUsd,
   mdiCashCheck,
+  mdiSettingsHelper,
   mdiDesk,
   mdiTag,
   mdiCalendarWeek
@@ -231,6 +245,7 @@ export default {
     return {
       icons: {
         mdiHomeOutline,
+        mdiAccount,
         mdiAccountTie,
         mdiAlphaTBoxOutline,
         mdiEyeOutline,
@@ -247,6 +262,7 @@ export default {
         mdiHistory,
         mdiCurrencyUsd,
         mdiCashCheck,
+        mdiSettingsHelper,
         mdiDesk,
         mdiTag,
         mdiCalendarWeek

@@ -14,9 +14,152 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Midtrans;
 
 class BookingController extends BaseController
 {
+    public function callback(Request $request){
+        $serverKey = 'SB-Mid-server-KX7YOOfRPU6gJaUd-x3spaFu';
+        $hashed = hash('sha512', $request->order_id.$request->status_code.$request->gross_amount.$serverKey);
+    
+        if($hashed == $request->signature_key){
+            if($request->transaction_status == 'capture' || $request->transaction_status == 'settlement'){
+                // Mengupdate status pembayaran menjadi 'Berhasil' di tabel payments
+                DB::table('payments')
+                    ->where('id', $request->order_id)
+                    ->update(['status' => 'Berhasil']);
+            }
+        }
+    }
+    public function bookingMidtrans(Request $request)
+    {
+        Log::info('Incoming request data:', $request->all());
+    
+        $validator = Validator::make($request->all(), [
+            'user_id' => 'required|integer',
+            'schedules_id' => 'required|integer',
+            'name' => 'required|string',
+            'alamatJemput' => 'required|string',
+            'num_seats' => 'required|array',
+            'num_seats.*' => 'integer',
+            'number_phone' => 'required|string',
+            'harga' => 'required|integer',
+            'status' => 'required|integer',
+            'email' => 'nullable|email',
+        ]);
+    
+        if ($validator->fails()) {
+            Log::error('Validation failed:', $validator->errors()->toArray());
+            return response()->json([
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
+        }
+    
+        try {
+            DB::beginTransaction();
+    
+            Log::info('Saving booking data');
+    
+            $bookingId = DB::table('bookings')->insertGetId([
+                'user_id' => $request->input('user_id'),
+                'schedules_id' => $request->input('schedules_id'),
+                'name' => $request->input('name'),
+                'alamatJemput' => $request->input('alamatJemput'),
+                'num_seats' => count($request->input('num_seats')),
+                'number_phone' => $request->input('number_phone'),
+                'seats' => 0,
+                'status' => 0,
+                'created_at' => now()->addHours(7),
+                'updated_at' => now()->addHours(7),
+            ]);
+    
+            Log::info('Booking data saved', ['booking_id' => $bookingId]);
+    
+            $seatNumbers = $request->input('num_seats');
+            $bookingSeats = [];
+            foreach ($seatNumbers as $seatNumber) {
+                $bookingSeats[] = [
+                    'booking_id' => $bookingId,
+                    'seat_number' => $seatNumber,
+                ];
+            }
+    
+            Log::info('Saving booking seats data');
+            DB::table('booking_seats')->insert($bookingSeats);
+    
+            Log::info('Saving payment data');
+    
+            $invoiceNumber = "INV-EKBT-" . time();
+            $expiredDate = now()->addHours(7)->addHour();
+    
+            $paymentId = DB::table('payments')->insertGetId([
+                'schedules_id' => $request->input('schedules_id'),
+                'bookings_id' => $bookingId,
+                'method' => 'noncash',
+                'status' => 'menunggu',
+                'amount' => $request->input('harga'),
+                'created_date' => now()->addHours(7),
+                'expired_date' => $expiredDate,
+                'how_to_pay_page' => 'null',
+                'how_to_pay_api' => 'null',
+                'invoice_number' => $invoiceNumber,
+                'virtual_account_number' => 'null',
+                'updated_at' => now()->addHours(7),
+                'active' => 0,
+            ]);
+    
+            DB::commit();
+    
+            Log::info('Booking and payment transaction committed');
+    
+            // Midtrans integration
+            $user = Auth::user();
+    
+            \Midtrans\Config::$serverKey = 'SB-Mid-server-KX7YOOfRPU6gJaUd-x3spaFu';
+            \Midtrans\Config::$isProduction = false;
+            \Midtrans\Config::$isSanitized = true;
+            \Midtrans\Config::$is3ds = true;
+    
+            $params = [
+                'transaction_details' => [
+                    'order_id' => $paymentId,
+                    'gross_amount' => $request->input('harga'),
+                ],
+                'customer_details' => [
+                    'first_name' => $user->name,
+                    'last_name' => '',
+                    'phone' => $user->phone_number,
+                ],
+            ];
+    
+            $snapToken = \Midtrans\Snap::getSnapToken($params);
+    
+            DB::table('payments')->where('id', $paymentId)->update([
+                'snap_token' => $snapToken,
+            ]);
+    
+            return response()->json([
+                'message' => 'Booking created successfully',
+                'data' => [
+                    'booking_id' => $bookingId,
+                    'booking_seats' => $bookingSeats,
+                    'payment_id' => $paymentId,
+                    'snap_token' => $snapToken,
+                ],
+            ], 201);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Exception during booking creation:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'message' => 'Failed to create booking',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
+    }
     public function cancelBooking(Request $request)
     {
         $paymentId = $request->input('payment_id');
@@ -30,12 +173,32 @@ class BookingController extends BaseController
     public function confirmBooking(Request $request)
     {
         $paymentId = $request->input('payment_id');
-
-        DB::table('payments')
-            ->where('id', $paymentId)
-            ->update(['status' => 'Berhasil']);
-
-        return response()->json(['message' => 'Payment status updated successfully'], 200);
+    
+        try {
+            if (empty($paymentId)) {
+                throw new \Exception('Payment ID is missing');
+            }
+    
+            $affectedRows = DB::table('payments')
+                ->where('id', $paymentId)
+                ->update(['status' => 'Berhasil']);
+    
+            if ($affectedRows === 0) {
+                throw new \Exception('Payment ID not found');
+            }
+    
+            Log::info('Payment status updated successfully', ['payment_id' => $paymentId]);
+    
+            return response()->json(['message' => 'Payment status updated successfully'], 200);
+        } catch (\Exception $e) {
+            Log::error('Error updating payment status', [
+                'payment_id' => $paymentId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+    
+            return response()->json(['message' => 'An error occurred while updating payment status', 'error' => $e->getMessage()], 500);
+        }
     }
     public function PesananOnlineBySchedulesID($id)
     {
@@ -92,9 +255,7 @@ class BookingController extends BaseController
         $groupedBookings = array_values($groupedBookings);
     
         return response()->json($groupedBookings);
-    }
-    
-    
+    } 
     public function showBokingTunaiOnline()
     {
         // Ambil ID user yang sedang login
@@ -212,68 +373,107 @@ class BookingController extends BaseController
             ], 500);
         }
     }
-    
+
     public function store(Request $request)
     {
-        $email = $request->email;
-    
-        if ($email !== null) {
-            $user = User::where('email', $email)->first(); // Find the user by email
-            if ($user) {
-                $user_id = $user->id; // Get the user ID if found
-            } else {
-                // Email is not registered
-                return response()->json(['error' => 'Email not registered'], 404); // Return a JSON response with an error message and status code 404 (Not Found)
-            }
-        } else {
-            $user_id = Auth::id(); // Get the ID of the authenticated user
-        }
+        Log::info('Incoming request data:', $request->all());
     
         $validator = Validator::make($request->all(), [
-            'schedules_id' => 'required|exists:schedules,id',
+            'user_id' => 'required|integer',
+            'schedules_id' => 'required|integer',
             'name' => 'required|string',
+            'alamatJemput' => 'required|string',
+            'num_seats' => 'required|array',
+            'num_seats.*' => 'integer',
             'number_phone' => 'required|string',
-            'num_seats' => 'required|integer|min:1', // Ensure at least one seat is selected
+            'harga' => 'required|integer',
+            'status' => 'required|integer',
+            'email' => 'nullable|email',
         ]);
     
         if ($validator->fails()) {
-            return response()->json(['message' => $validator->errors()], 400);
-        }
-    
-        // Create booking
-        $booking = new Bookings;
-        $booking->user_id = $user_id;
-        $booking->schedules_id = $request->schedules_id;
-        $booking->name = $request->name;
-        $booking->number_phone = $request->number_phone;
-        $booking->alamatJemput = $request->alamatJemput;
-        $booking->save();
-    
-        // Loop through each seat selected and create booking_seat record
-        for ($i = 1; $i <= $request->num_seats; $i++) {
-            $bookingSeat = new BookingSeat;
-            $bookingSeat->booking_id = $booking->id;
-            $bookingSeat->seat_number = $i;
-            $bookingSeat->save();
-        }
-    
-        // Create pembayaran
-        $invoice = "INV-EKBT-" . time();
-        $pembayaran = new Pembayaran;
-        // Set pembayaran attributes
-        // ...
-    
-        if ($booking->save() && $pembayaran->save()) {
+            Log::error('Validation failed:', $validator->errors()->toArray());
             return response()->json([
-                'bookings' => $booking,
-                'pembayaran' => $pembayaran,
-                'message' => 'berhasil'
-            ]);
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], 422);
         }
-        return 'gagal';
+    
+        try {
+            DB::beginTransaction();
+    
+            Log::info('Saving booking data');
+    
+            $bookingId = DB::table('bookings')->insertGetId([
+                'user_id' => $request->input('user_id'),
+                'schedules_id' => $request->input('schedules_id'),
+                'name' => $request->input('name'),
+                'alamatJemput' => $request->input('alamatJemput'),
+                'num_seats' => count($request->input('num_seats')),
+                'number_phone' => $request->input('number_phone'),
+                'seats' => 0,
+                'status' => $request->input('status'),
+                'created_at' => now()->addHours(7),
+                'updated_at' => now()->addHours(7),
+            ]);
+    
+            Log::info('Booking data saved', ['booking_id' => $bookingId]);
+    
+            // Simpan data kursi di sini
+            $seatNumbers = $request->input('num_seats');
+            $bookingSeats = [];
+            foreach ($seatNumbers as $seatNumber) {
+                $bookingSeats[] = [
+                    'booking_id' => $bookingId,
+                    'seat_number' => $seatNumber,
+                ];
+            }
+    
+            Log::info('Saving booking seats data');
+            DB::table('booking_seats')->insert($bookingSeats);
+    
+            Log::info('Booking seats data saved');
+    
+            // Simpan data pembayaran di sini
+            $paymentId = DB::table('payments')->insertGetId([
+                'schedules_id' => $request->input('schedules_id'),
+                'bookings_id' => $bookingId,
+                'method' => 'cash', // Ganti dengan metode pembayaran yang sesuai
+                'status' => 'Berhasil',
+                'amount' => $request->input('harga'),
+                'created_date' => now()->addHours(7),
+                'expired_date' => now()->addHours(7)->addHour(),
+                'invoice_number' => "INV-EKBT-" . time(),
+                'updated_at' => now()->addHours(7),
+                'active' => 0,
+            ]);
+    
+            Log::info('Payment data saved', ['payment_id' => $paymentId]);
+    
+            DB::commit();
+    
+            Log::info('Booking and payment transaction committed');
+            return response()->json([
+                'message' => 'Booking and payment created successfully',
+                'data' => [
+                    'booking_id' => $bookingId,
+                    'booking_seats' => $bookingSeats,
+                    'payment_id' => $paymentId,
+                ],
+            ], 201);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Exception during booking and payment creation:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            return response()->json([
+                'message' => 'Failed to create booking and payment',
+                'error' => $e->getMessage(),
+            ], 500);
+        }
     }
     
-
     public function index()
     {
         $booking = Bookings::with('schedules', 'user')->get();
@@ -284,7 +484,6 @@ class BookingController extends BaseController
             return response()->json(['message' => 'Booking not found.'], 404);
         }
     }
-
     public function getOne($id)
     {
         $booking = Bookings::with('schedules', 'user')->where('id', $id)->get();
@@ -295,7 +494,6 @@ class BookingController extends BaseController
             return response()->json(['message' => 'Booking not found.'], 404);
         }
     }
-
     public function getByUserId()
     {
         $user = Auth::user();
@@ -329,11 +527,11 @@ class BookingController extends BaseController
                 'payments.how_to_pay_page',
                 'payments.how_to_pay_api',
                 'payments.created_date',
-                'payments.expired_date'
+                'payments.expired_date',
+                'payments.method'
             )
             ->orderBy('bookings.created_at', 'DESC')
             ->get();
-    
     
         if ($booking->isNotEmpty()) {
             return response()->json($booking);
@@ -341,7 +539,6 @@ class BookingController extends BaseController
             return response()->json(['message' => 'Booking not found.'], 404);
         }
     }
-
     public function getriwayat()
 {
     $user = Auth::user();
@@ -392,9 +589,6 @@ class BookingController extends BaseController
         return response()->json(['message' => 'Booking not found.'], 404);
     }
 }
-
-    
-
     public function getOneSchedules($id)
     {
         $bookings = DB::table('bookings')
@@ -458,7 +652,6 @@ class BookingController extends BaseController
             return response()->json(['message' => 'Booking not found.'], 404);
         }
     }
-    
     public function WaitPayment($id)
     {
         $wait = DB::table('bookings')
@@ -483,7 +676,6 @@ class BookingController extends BaseController
         $booking = Bookings::find($id);
         return $this->sendResponse($booking, 'Booking Retrieved Successfully');
     }
-
     public function expiredCheck($id)
     {
         $pembayaran = Pembayaran::find($id);

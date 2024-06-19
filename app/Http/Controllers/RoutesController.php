@@ -13,6 +13,49 @@ use Illuminate\Support\Facades\DB;
 
 class RoutesController extends BaseController
 {
+    public function showRoutesBusByAdminId()
+    {
+        try {
+            // Pastikan pengguna telah terautentikasi
+            if (Auth::check()) {
+                // Dapatkan ID admin yang sedang login
+                $adminId = Auth::id();
+    
+                // Menampilkan rute berdasarkan admin yang sedang login
+                $routes = DB::table('routes')
+                            ->select('routes.id', 'routes.derpature', 'routes.arrival', 'routes.harga', 'routes.type', 'routes.status')
+                            ->join('brands', 'routes.brand_id', '=', 'brands.id')
+                            ->where('brands.admin_id', $adminId)
+                            ->get();
+    
+                // Membungkus data dalam array dengan kunci "data"
+                $data = ["data" => $routes];
+    
+                // Mengembalikan data rute
+                return response()->json($data);
+            } else {
+                // Pengguna belum terautentikasi, mungkin perlu diarahkan ke halaman login
+                return response()->json(['message' => 'Unauthorized'], 401);
+            }
+        } catch (\Exception $e) {
+            // Jika terjadi kesalahan, kembalikan respons dengan pesan kesalahan yang spesifik
+            return response()->json(['message' => 'Error retrieving routes.', 'error' => $e->getMessage()], 500);
+        }
+    }
+    public function getLokasiLoket()
+    {
+        // Dapatkan ID dari user yang sedang login
+        $adminId = Auth::id();
+
+        // Jalankan query untuk mendapatkan lokasi_loket
+        $lokasiLoket = DB::table('lokets as l')
+            ->join('brands as b', 'b.id', '=', 'l.brand_id')
+            ->where('b.admin_id', $adminId)
+            ->pluck('l.lokasi_loket');
+
+        // Return data (sesuaikan dengan kebutuhan Anda, misalnya return sebagai JSON)
+        return response()->json($lokasiLoket);
+    }
     public function getAllRoutes()
     {
         try {

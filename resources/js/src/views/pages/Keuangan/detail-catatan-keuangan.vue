@@ -53,7 +53,7 @@ export default {
         { text: "Tipe", value: "type" },
         { text: "Nama Supir", value: "name" },
         { text: "Detail", value: "Detail", sortable: false },
-        { text: "Total", value: "total" },
+        { text: "Total", value: "total_penghasilan" },
       ],
       selectedDate: "",
     };
@@ -78,7 +78,7 @@ export default {
       .then((response) => {
         this.ListByDate = response.data.data;
         this.ListByDate.forEach((item) => {
-          item.total = item.jumlah_booking * item.harga;
+          item.total = item.total_penghasilan;
         });
       })
       .catch((error) => {

@@ -7,9 +7,34 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use App\Models\Brand;
+use App\Models\User;
 
 class DireksiController extends Controller
 {
+    public function userAll() {
+        $users = DB::table('users as u')
+            ->leftJoin('bookings as b', 'b.user_id', '=', 'u.id')
+            ->leftJoin('payments as p', 'p.bookings_id', '=', 'b.id')
+            ->select('u.*', 
+                     DB::raw('SUM(CASE WHEN p.status = "Expired" THEN 1 ELSE 0 END) as jumlah_pembayaran_expired'),
+                     DB::raw('SUM(CASE WHEN p.status = "Berhasil" THEN 1 ELSE 0 END) as jumlah_pembayaran_berhasil'))
+            ->where('u.role_id', 2)
+            ->groupBy('u.id')
+            ->get();
+    
+        return response()->json($users);
+    }
+    
+    public function DefaultSchedulesToSchedules()
+    {
+        try {
+            // Menjalankan prosedur tersimpan
+            DB::statement('CALL generate_weekly_schedule()');
+            return response()->json(['message' => 'Procedure executed successfully.']);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
     public function brandsyanglogin()
     {
         $adminId = Auth::id();
@@ -52,8 +77,6 @@ class DireksiController extends Controller
             return response()->json(['message' => 'Brand not found or no change made'], 404);
         }
     }
-    
-
     public function adminkantorNotAssociated()
     {
         $data = DB::table('users')
@@ -77,55 +100,54 @@ class DireksiController extends Controller
 
     public function CountAdminKantor()
     {
-        $count = DB::table('users')
-            ->where('role_id', 1)
-            ->count();
-
-        return response()->json(['count' => $count]);
+        $countUsers = DB::table('users')->where('role_id', 1)->count();
+        $countBrands = DB::table('brands')->where('status', 1)->count();
+    
+        return response()->json([
+            'count_users' => $countUsers,
+            'count_brands' => $countBrands
+        ]);
     }
     public function index()
     {
-        // Periksa apakah pengguna telah diautentikasi
         if (Auth::check()) {
-            // Jika pengguna telah diautentikasi, dapatkan ID-nya
+            // Get the authenticated user's ID
             $user_id = Auth::user()->id;
     
-            $keuangan = DB::table('schedules')
-                ->join('bookings', 'bookings.schedules_id', '=', 'schedules.id')
-                ->join('buses', 'buses.id', '=', 'schedules.bus_id')
-                ->join('users', 'buses.supir_id', '=', 'users.id')
-                ->join('lokets', 'buses.loket_id', '=', 'lokets.id')
-                ->select(DB::raw('DATE(schedules.tanggal) as tanggal'), DB::raw('SUM(schedules.harga) as total'))
-                ->groupBy(DB::raw('DATE(schedules.tanggal)'))
-                ->get();
+            // Raw SQL query to retrieve combined data
+            $combinedData = DB::select(
+                DB::raw("
+                    SELECT DATE(schedules.tanggal) AS tanggal, 
+                           SUM(ppj.total_penghasilan) AS total,
+                           COUNT(*) AS jumlah
+                    FROM schedules
+                    JOIN buses ON buses.id = schedules.bus_id
+                    JOIN brands ON brands.id = buses.merk_id
+                    JOIN penghasilan_per_jadwal ppj ON ppj.schedule_id = schedules.id
+                    WHERE brands.admin_id = :user_id
+                    GROUP BY DATE(schedules.tanggal)
+                    ORDER BY DATE(schedules.tanggal) DESC
+                "), ['user_id' => $user_id]
+            );
     
-            $total = DB::table('schedules')
-                ->join('bookings', 'bookings.schedules_id', '=', 'schedules.id')
-                ->join('buses', 'buses.id', '=', 'schedules.bus_id')
-                ->join('users', 'buses.supir_id', '=', 'users.id')
-                ->join('lokets', 'buses.loket_id', '=', 'lokets.id')
-                ->select(DB::raw('DATE(schedules.tanggal) as tanggal'), DB::raw('COUNT(DISTINCT buses.id) as jumlah'))
-                ->groupBy(DB::raw('DATE(schedules.tanggal)'))
-                ->get();
-    
-            return response()->json(['data' => $keuangan, 'total' => $total]);
+            return response()->json(['data' => $combinedData]);
         } else {
-            // Jika pengguna tidak diautentikasi, berikan respons yang sesuai
+            // If the user is not authenticated, return an unauthorized response
             return response()->json(['message' => 'Unauthorized'], 401);
         }
     }
     
-
-    public function getByTanggal(Request $request, $tanggal)
+         public function getByTanggal(Request $request, $tanggal)
     {
         $schedule = DB::table('schedules')
             ->join('buses', 'buses.id', '=', 'schedules.bus_id')
             ->join('users', 'buses.supir_id', '=', 'users.id')
             ->join('routes', 'schedules.route_id', '=', 'routes.id')
             ->leftJoin('bookings', 'bookings.schedules_id', '=', 'schedules.id')
-            ->select('schedules.id as schedule_id', 'schedules.tanggal', 'schedules.harga', 'buses.police_number', 'buses.nomor_pintu',  'routes.arrival', 'routes.derpature', 'routes.type', 'users.name', DB::raw('COUNT(bookings.schedules_id) as jumlah_booking'))
+            ->join('penghasilan_per_jadwal', 'penghasilan_per_jadwal.schedule_id', '=', 'schedules.id')
+            ->select('schedules.id as schedule_id', 'schedules.tanggal', 'schedules.harga', 'buses.police_number', 'buses.nomor_pintu',  'routes.arrival', 'routes.derpature', 'routes.type','penghasilan_per_jadwal.total_penghasilan', 'users.name', DB::raw('COUNT(bookings.schedules_id) as jumlah_booking'))
             ->whereDate('schedules.tanggal', '=', date('Y-m-d', strtotime($tanggal)))
-            ->groupBy('schedules.id', 'schedules.tanggal', 'schedules.harga', 'buses.police_number', 'buses.nomor_pintu',  'routes.arrival', 'routes.derpature', 'routes.type', 'users.name',)
+            ->groupBy('schedules.id', 'schedules.tanggal', 'schedules.harga', 'buses.police_number', 'buses.nomor_pintu',  'routes.arrival', 'routes.derpature', 'routes.type', 'users.name')
             ->get();
 
         return response()->json(['data' => $schedule]);
@@ -133,24 +155,68 @@ class DireksiController extends Controller
 
     public function getPassenger($id)
     {
-        $penumpang = DB::table('bookings')
-            ->join('users', 'bookings.user_id', '=', 'users.id')
-            ->join('schedules', 'bookings.schedules_id', '=', 'schedules.id')
-            ->join('payments', 'bookings.id', 'payments.bookings_id')
-            ->join('routes', 'schedules.route_id', '=', 'routes.id')
-            ->select('bookings.name', 'bookings.num_seats', 'bookings.number_phone', 'bookings.alamatJemput', 'payments.method', 'routes.harga')
-            ->where('bookings.id', '=', $id)
-            ->get();
-
-        return response()->json(['data' => $penumpang]);
+        // Menjalankan query SQL
+        $results = DB::select("
+            SELECT 
+                bookings.id,
+                bookings.name, 
+                bookings.num_seats, 
+                bookings.number_phone, 
+                bookings.alamatJemput, 
+                payments.method, 
+                payments.amount as harga,
+                booking_seats.seat_number,
+                SUM(payments.amount) AS total
+            FROM 
+                bookings
+            JOIN 
+                users ON bookings.user_id = users.id
+            JOIN 
+                schedules ON bookings.schedules_id = schedules.id
+            JOIN 
+                payments ON bookings.id = payments.bookings_id
+            JOIN 
+                routes ON schedules.route_id = routes.id
+            JOIN
+                booking_seats ON bookings.id = booking_seats.booking_id
+            WHERE 
+                schedules.id = ?
+            GROUP BY
+                bookings.id, bookings.name, bookings.num_seats, bookings.number_phone, bookings.alamatJemput, payments.method, payments.amount, booking_seats.seat_number
+        ", [$id]);
+    
+        // Menggabungkan data berdasarkan ID
+        $penumpang = [];
+        foreach ($results as $result) {
+            // Jika ID sudah ada dalam array, tambahkan nomor kursi ke array seat_number
+            if (isset($penumpang[$result->id])) {
+                $penumpang[$result->id]->seat_number[] = $result->seat_number;
+            } else {
+                // Jika ID belum ada, buat entri baru dan tambahkan nomor kursi sebagai array
+                $penumpang[$result->id] = (object) [
+                    'id' => $result->id,
+                    'name' => $result->name,
+                    'num_seats' => $result->num_seats,
+                    'number_phone' => $result->number_phone,
+                    'alamatJemput' => $result->alamatJemput,
+                    'method' => $result->method,
+                    'harga' => $result->harga,
+                    'seat_number' => [$result->seat_number],
+                ];
+            }
+        }
+    
+        // Mengonversi hasil ke array dan mengembalikan sebagai respons JSON
+        return response()->json(['data' => array_values($penumpang)]);
     }
-
-
+    
+    
     public function getAllBrands()
     {
         $brands = DB::table('brands')
         ->join('users', 'brands.admin_id', '=', 'users.id')
         ->select('brands.*', 'users.name', 'users.email')
+        ->where('brands.status', 1)
         ->get();
 
         return Response::json($brands);

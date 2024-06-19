@@ -15,6 +15,39 @@ use Illuminate\Support\Facades\Log; // Import Log
 
 class ScheduleController extends BaseController
 {
+    public function deleteSchedule($id)
+    {
+        try {
+            // Begin a transaction
+            DB::beginTransaction();
+
+            // Log the start of the transaction
+            Log::info("Starting transaction to delete schedule with ID: $id");
+
+            // Delete from penghasilan_per_jadwal first to avoid foreign key constraint issues
+            $penghasilanDeleted = DB::table('penghasilan_per_jadwal')->where('schedule_id', $id)->delete();
+            Log::info("Deleted $penghasilanDeleted rows from penghasilan_per_jadwal for schedule_id: $id");
+
+            // Delete from schedules table
+            $scheduleDeleted = DB::table('schedules')->where('id', $id)->delete();
+            Log::info("Deleted $scheduleDeleted rows from schedules for id: $id");
+
+            // Commit the transaction
+            DB::commit();
+
+            // Return success message
+            return response()->json(['message' => 'Schedule deleted successfully'], 200);
+        } catch (\Exception $e) {
+            // Rollback the transaction in case of error
+            DB::rollBack();
+
+            // Log the error
+            Log::error("Failed to delete schedule with ID: $id", ['error' => $e->getMessage()]);
+
+            // Return error message
+            return response()->json(['error' => 'Failed to delete schedule', 'message' => $e->getMessage()], 500);
+        }
+    }
     public function SelectOnes($id)
     {
         $schedule = DB::table('schedules')
@@ -39,39 +72,60 @@ class ScheduleController extends BaseController
         return $this->sendResponse($schedule, 'Booking Retrieved Successfully');
     }
     public function store(Request $request)
-    {
-        // Log the incoming request data
-        Log::info('Store Schedule Request Data:', $request->all());
+{
+    // Log the incoming request data
+    Log::info('Store Schedule Request Data:', $request->all());
     
-        $validator = Validator::make($request->all(), [
-            'bus_id' => 'required',
-            'route_id' => 'required',
-            'tanggal' => 'required|date',
-            'harga' => 'required|string',
-        ], [
-            'bus_id.required' => 'Bus harus diisi!',
-            'route_id.required' => 'Rute harus diisi!',
-            'tanggal.required' => 'Tanggal Harus Di Isi!',
-            'tanggal.date' => 'Format Tanggal Salah!',
-            'harga.required' => 'Harga harus di isi!'
-        ]);
+    $validator = Validator::make($request->all(), [
+        'bus_id' => 'required',
+        'route_id' => 'required',
+        'tanggal' => 'required|date',
+        'harga' => 'required|string',
+    ], [
+        'bus_id.required' => 'Bus harus diisi!',
+        'route_id.required' => 'Rute harus diisi!',
+        'tanggal.required' => 'Tanggal Harus Di Isi!',
+        'tanggal.date' => 'Format Tanggal Salah!',
+        'harga.required' => 'Harga harus di isi!'
+    ]);
     
-        if ($validator->fails()) {
-            return $this->sendError('Input tidak boleh kosong', $validator->errors(), 422);
-        }
-    
-        try {
-            $input = $request->all();
-            $input['status'] = 'not_started';
-            Schedule::create($input);
-            Log::info('Schedule Created:', $input);
-            return $this->sendResponse($input, 'Berhasil Membuat Jadwal Baru');
-        } catch (\Exception $e) {
-            // Log the exception
-            Log::error('Error creating schedule:', ['error' => $e->getMessage()]);
-            return response()->json(['error' => 'Internal Server Error'], 500);
-        }
+    if ($validator->fails()) {
+        return $this->sendError('Input tidak boleh kosong', $validator->errors(), 422);
     }
+    
+    try {
+        $input = $request->all();
+        $input['status'] = 'not_started';
+
+        // Insert into schedules table
+        $schedule = DB::table('schedules')->insertGetId($input);
+
+        // Get komisi data based on the logged-in user's admin_id
+        $komisiData = DB::table('komisi')
+                        ->join('brands', 'brands.id', '=', 'komisi.brand_id')
+                        ->where('brands.admin_id', '=', auth()->user()->id)
+                        ->select('persentase_komisi', 'setoran_kantor', 'administrasi')
+                        ->first();
+
+        // Insert into penghasilan_per_jadwal table
+        DB::table('penghasilan_per_jadwal')->insert([
+            'schedule_id' => $schedule,
+            'total_penghasilan' => 0,
+            'persentase_komisi' => $komisiData->persentase_komisi,
+            'setoran_kantor' => $komisiData->setoran_kantor,
+            'administrasi' => $komisiData->administrasi,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        Log::info('Schedule Created:', $input);
+        return $this->sendResponse($input, 'Berhasil Membuat Jadwal Baru');
+    } catch (\Exception $e) {
+        // Log the exception
+        Log::error('Error creating schedule:', ['error' => $e->getMessage()]);
+        return response()->json(['error' => 'Internal Server Error'], 500);
+    }
+}
     public function ShowAll()
     {
         try {
@@ -97,32 +151,32 @@ class ScheduleController extends BaseController
     }
     
     public function index()
-    {
-        $currentDate = Carbon::now();
-        // return $currentDate;
-        $schedule = DB::table('schedules')
-            ->join('buses', 'buses.id', '=', 'schedules.bus_id')
-            ->join('users', 'buses.supir_id', '=', 'users.id')
-            ->join('routes', 'schedules.route_id', '=', 'routes.id')
-            ->where('schedules.status', "!=", 'complete')
-            // ->whereDate('schedules.tanggal', '>', $currentDate)
-            ->select('schedules.id as schedule_id', 'schedules.tanggal', 'schedules.harga', 'buses.*', 'routes.*', 'users.name')
-            ->orderBy('schedules.tanggal', 'DESC')
-            ->get();
+{
+    $currentDate = Carbon::now();
+    
+    $schedule = DB::table('schedules')
+        ->join('buses', 'buses.id', '=', 'schedules.bus_id')
+        ->join('users', 'buses.supir_id', '=', 'users.id')
+        ->join('routes', 'schedules.route_id', '=', 'routes.id')
+        ->where('schedules.status', '!=', 'complete')
+        // ->whereDate('schedules.tanggal', '>', $currentDate)
+        ->select('schedules.id as schedule_id', 'schedules.tanggal', 'schedules.harga', 'buses.*', 'routes.*', 'users.name')
+        ->orderBy('schedules.tanggal', 'DESC')
+        ->get();
 
-        return $this->sendResponse($schedule, 'Schedule Retrieved Successfully');
+    // Menghitung jumlah total num_seats dari booking yang dilakukan
+    $totalSeatsBooked = DB::table('schedules')
+        ->join('bookings', 'bookings.schedules_id', '=', 'schedules.id')
+        ->join('payments', 'payments.bookings_id', '=', 'bookings.id')
+        ->join('buses', 'schedules.bus_id', '=', 'buses.id')
+        // ->whereDate('schedules.tanggal', '>', $currentDate)
+        ->whereIn('payments.status', ['Berhasil', 'Menunggu'])
+        ->sum('bookings.num_seats');
 
-        $hasBooked = DB::table('schedules')
-            ->join('bookings', 'bookings.schedules_id', '=', 'schedules.id')
-            ->join('payments', 'payments.bookings_id', 'bookings.id')
-            ->join('buses', 'schedules.bus_id', '=', 'buses.id')
-            // ->whereDate('schedules.tanggal', '>', $currentDate)
-            ->whereIn('payments.status', ['Berhasil', 'Menunggu'])
-            ->select('bookings.schedules_id')
-            ->get();
+    // Mengembalikan data schedule beserta jumlah total bangku yang dibooking
+    return response()->json(['total_bangku_dibooking' => $totalSeatsBooked, 'data' => $schedule]);
+}
 
-        return response()->json(['total' => $hasBooked, 'data' => $schedule]);
-    }
     public function showForAdmin()
     {
         $user = Auth::user()->id;
@@ -206,7 +260,7 @@ class ScheduleController extends BaseController
             ->join('routes', 'schedules.route_id', '=', 'routes.id')
             // ->where('buses.type', '=', 'Ekonomi')
             ->where('schedules.id', '=', $id)
-            ->select('schedules.id as schedule_id', 'schedules.tanggal', 'schedules.harga', 'schedules.bus_id', 'schedules.route_id', 'buses.*', 'routes.*', 'users.name')
+            ->select('schedules.id as schedule_id', 'schedules.tanggal', 'schedules.harga', 'schedules.bus_id', 'schedules.route_id', 'schedules.status as jadwal_status','buses.*','routes.*', 'users.name')
             ->get();
 
         return $this->sendResponse($schedule, 'Schedule Retrieved Successfully');

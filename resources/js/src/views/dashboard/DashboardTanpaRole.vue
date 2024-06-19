@@ -3,8 +3,7 @@
       <!-- Header Section -->
       <v-row>
         <v-container>
-          <v-img height="400px" :src="require('@/assets/images/logos/KBT-BG.jpg').default">
-
+          <v-img height="400px" :src="require('@/assets/images/logos/latarbelakang.jpg').default">
             <v-card-title class="text-title">
               <h5 class="white--text">Pelayanan terbaik untuk perjalanan kamu</h5>
             </v-card-title>
@@ -77,7 +76,7 @@
             <v-col cols="auto">
               <v-avatar size="40" class="mt-2 ml-2">
                 <img
-                  :src="require('@/assets/images/logos/logo-KBT.png').default"
+                  :src="require('@/assets/images/logos/tiket.png').default"
                   max-height="50px"
                   max-width="100px"
                   alt="avatar"
@@ -119,17 +118,17 @@
                       >
                         PENUH
                       </h3>
-                      <small v-else color="secondary">
+                      <!-- <small v-else color="secondary">
                         Tersedia : {{ item.number_of_seats - count - 1 }} Kursi
-                      </small>
+                      </small> -->
                     </div>
                     <div
                       class="col-md-3"
                       v-if="!Object.keys(bookingCounts).includes(String(item.schedule_id))"
                     >
-                      <small color="secondary">
+                      <!-- <small color="secondary">
                         Tersedia : {{ item.number_of_seats - 1 }} Kursi
-                      </small>
+                      </small> -->
                     </div>
                     <v-row class="col-md-4 btn-pesan">
                       <v-btn

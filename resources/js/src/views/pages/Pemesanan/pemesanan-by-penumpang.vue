@@ -23,7 +23,7 @@
             clearable
             hide-details
           ></v-select>
-        ></v-col>
+        </v-col>
         <v-col>
           <v-select
             v-model="selectedType"
@@ -32,17 +32,17 @@
             clearable
             hide-details
           ></v-select>
-        ></v-col>
+        </v-col>
       </v-row>
     </v-container>
     <h3 class="my-4">
       Pesan Tiket Mobil Bus Online di
-      <h3 text-color="primary">e-KBT</h3>
+      <h3 text-color="primary">E-TobaTrans</h3>
     </h3>
     <p>
       Pesan tiket mobil bus online semudah belanja online tanpa perlu ke agen tiket mobil
       bus. Jadwal bus travel, trayek, tempat keberangkatan,harga tiket, hingga pilih kursi
-      hanya di e-KBT.
+      hanya di e-TobaTrans.
     </p>
     <v-card v-if="filterSchedules().length < 1">
       <h3 class="text-center py-4">Maaf, tidak ada jadwal yang tersedia saat ini.</h3>
@@ -52,7 +52,7 @@
         <v-col cols="auto">
           <v-avatar size="40" class="mt-2 ml-2">
             <img
-              :src="require('@/assets/images/logos/logo-KBT.png').default"
+            :src="require('@/assets/images/logos/tiket.png').default"
               max-height="50px"
               max-width="100px"
               alt="avatar"
@@ -102,9 +102,9 @@
                   class="col-md-3"
                   v-if="!Object.keys(bookingCounts).includes(String(item.schedule_id))"
                 >
-                  <small color="secondary"
+                  <!-- <small color="secondary"
                     >Tersedia : {{ item.number_of_seats - 1 }} Kursi
-                  </small>
+                  </small> -->
                 </div>
 
                 <v-row class="col-md-4 btn-pesan">

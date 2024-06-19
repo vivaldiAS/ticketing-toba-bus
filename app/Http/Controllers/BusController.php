@@ -112,6 +112,7 @@ class BusController extends BaseController
         $bus->loket_id = $request->input('loket_id');
         $bus->number_of_seats = $request->input('number_of_seats');
         $bus->supir_id = $request->input('supir_id');
+        $bus->nomor_pintu = $request->input('nomor_pintu');
         $bus->save();
 
         return $this->sendResponse($bus, 'Bus Updated Successfully');
@@ -197,13 +198,14 @@ class BusController extends BaseController
         $results = DB::table('buses')
     ->leftJoin('schedules as sc', 'sc.bus_id', '=', 'buses.id')
     ->leftJoin('brands as b', 'b.id', '=', 'buses.merk_id')
+    ->join('lokets as l', 'l.id', '=', 'buses.loket_id' )
     ->where('b.admin_id', $user_id)
     ->whereNotIn('buses.id', function ($query) {
         $query->select('bus_id')
               ->from('schedules')
               ->where('status', 'not_started');
     })
-    ->select('buses.*')
+    ->select('buses.*', 'l.lokasi_loket')
     ->distinct()
     ->get();
 
